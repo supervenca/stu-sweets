@@ -1,0 +1,21 @@
+# Node.js dependencies
+stu-sweets-backend/node_modules/
+# Frontend node_modules (если будет)
+stu-sweets-frontend/node_modules/
+
+# Environment variables
+stu-sweets-backend/.env
+stu-sweets-frontend/.env
+
+# Prisma generated files
+stu-sweets-backend/src/generated/prisma/
+stu-sweets-backend/prisma/migrations/
+
+# Docker temporary files
+docker-compose.override.yml
+
+# macOS
+.DS_Store
+
+# Test/debug files
+test.txt
