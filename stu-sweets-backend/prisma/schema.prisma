@@ -1,6 +1,6 @@
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -9,47 +9,79 @@ generator client {
 
 enum OrderStatus {
   PENDING
+  CONFIRMED
   PAID
   FULFILLED
   CANCELED
 }
 
+// User = only Admin
 model User {
-  id         Int      @id @default(autoincrement())
-  email      String   @unique
-  password   String
-  name       String?
-  isAdmin    Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  orders     Order[]
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  products Product[] @relation("ProductToCategory")
 }
 
 model Product {
-  id          Int       @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   name        String
   description String?
-  price       Decimal   @db.Decimal(10,2)
-  stock       Int       @default(0)
-  createdAt   DateTime  @default(now())
+  price       Decimal     @db.Decimal(10,2)
+  stock       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  categoryId  Int?
+  category    Category?   @relation("ProductToCategory", fields: [categoryId], references: [id])
   orderItems  OrderItem[]
 }
 
-model Order {
-  id        Int        @id @default(autoincrement())
-  userId    Int
-  user      User       @relation(fields: [userId], references: [id])
-  status    OrderStatus @default(PENDING)
-  total     Decimal    @db.Decimal(10,2)
-  createdAt DateTime   @default(now())
-  items     OrderItem[]
+model OrderItem {
+  id          Int          @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  order       Order        @relation(fields: [orderId], references: [id])
+  product     Product      @relation(fields: [productId], references: [id])
+  price       Decimal      @db.Decimal(10,2)
+  quantity    Int
+  cakeOptions CakeOption[] @relation("OrderItemToCakeOption")
 }
 
-model OrderItem {
-  id        Int     @id @default(autoincrement())
+model CakeOption {
+  id          Int        @id @default(autoincrement())
+  name        String
+  value       String
+  orderItemId Int
+  orderItem   OrderItem  @relation("OrderItemToCakeOption", fields: [orderItemId], references: [id])
+}
+
+// Order и Invoice с явной связью
+model Order {
+  id            Int       @id @default(autoincrement())
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  comment       String?
+  status        OrderStatus @default(PENDING)
+  total         Decimal     @db.Decimal(10,2)
+  createdAt     DateTime    @default(now())
+  items         OrderItem[]
+  invoices      Invoice[]   @relation("OrderToInvoice")
+}
+
+model Invoice {
+  id        Int      @id @default(autoincrement())
   orderId   Int
-  productId Int
-  order     Order   @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
-  price     Decimal @db.Decimal(10,2)
-  quantity  Int
+  order     Order    @relation("OrderToInvoice", fields: [orderId], references: [id])
+  issuedAt  DateTime @default(now())
+  paid      Boolean  @default(false)
+  total     Decimal  @db.Decimal(10,2)
+  pdfUrl    String?
+  note      String?
 }
