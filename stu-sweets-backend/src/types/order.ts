@@ -13,5 +13,11 @@ export interface CreateOrderDto {
 }
 
 export interface UpdateOrderDto {
-  status?: "PENDING" | "PAID" | "FULFILLED" | "CANCELED";
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  comment?: string;
+  status?: "PENDING" | "PAID" | "FULFILLED" | "CANCELED" | "CONFIRMED";
+  total?: number;
 }
+

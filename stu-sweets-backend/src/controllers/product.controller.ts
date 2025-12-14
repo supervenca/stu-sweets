@@ -6,6 +6,7 @@ import {
   updateProduct,
   deleteProduct,
 } from "../services/product.service.js";
+import { createProductSchema, updateProductSchema } from "../schemas/product.schema.js";
 import { HttpError } from "../utils/httpError.js";
 
 // GET ALL
@@ -28,40 +29,32 @@ export async function getProductByIdController(req: Request, res: Response) {
 
 // CREATE
 export async function createProductController(req: Request, res: Response) {
-  const { name, description, price, stock } = req.body;
-
-  if (!name || price === undefined) {
-    throw new HttpError(400, "name and price required");
+  const parseResult = createProductSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    throw new HttpError(400, "Invalid input: " + parseResult.error.message);
   }
 
-  const product = await createProduct({
-    name,
-    description,
-    price,
-    stock: stock ?? 0,
-  });
-
+  const product = await createProduct(parseResult.data);
   return res.status(201).json(product);
 }
 
 // UPDATE
 export async function updateProductController(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const data = req.body;
-
-  const updated = await updateProduct(id, data);
-
-  if (!updated) {
-    throw new HttpError(404, "Product not found");
+  const parseResult = updateProductSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    throw new HttpError(400, "Invalid input: " + parseResult.error.message);
   }
 
+  const updated = await updateProduct(id, parseResult.data);
+  if (!updated) throw new HttpError(404, "Product not found");
   return res.json(updated);
 }
 
 // DELETE
 export async function deleteProductController(req: Request, res: Response) {
   const id = Number(req.params.id);
-
-  await deleteProduct(id);
+  const deleted = await deleteProduct(id);
+  if (!deleted) throw new HttpError(404, "Product not found");
   return res.json({ success: true });
 }

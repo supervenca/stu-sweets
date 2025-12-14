@@ -6,6 +6,7 @@ import {
   updateOrder,
   deleteOrder,
 } from "../services/order.service.js";
+import { createOrderSchema, updateOrderSchema } from "../schemas/order.schema.js";
 import { HttpError } from "../utils/httpError.js";
 
 // GET ALL
@@ -33,47 +34,41 @@ export async function getOrderByIdController(req: Request, res: Response) {
 
 // CREATE
 export async function createOrderController(req: Request, res: Response) {
-  const { customerName, customerEmail, customerPhone, comment, items } = req.body;
-
-  if (!customerName || !customerEmail) {
-    throw new HttpError(400, "customerName and customerEmail are required");
+  const parseResult = createOrderSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    throw new HttpError(400, "Invalid input: " + parseResult.error.message);
   }
 
-  if (!Array.isArray(items) || items.length === 0) {
-    throw new HttpError(400, "items must be a non-empty array");
-  }
-
-  for (const item of items) {
-    if (
-      typeof item.productId !== "number" ||
-      typeof item.quantity !== "number" ||
-      typeof item.price !== "number"
-    ) {
-      throw new HttpError(400, "Invalid order item structure");
-    }
-  }
-
-  const order = await createOrder({
-    customerName,
-    customerEmail,
-    customerPhone,
-    comment,
-    items,
-  });
-
+  const order = await createOrder(parseResult.data);
   return res.status(201).json(order);
 }
 
 // UPDATE
 export async function updateOrderController(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const data = req.body;
 
+  // Проверяем корректность ID
   if (Number.isNaN(id)) {
     throw new HttpError(400, "Invalid order id");
   }
 
-  const updated = await updateOrder(id, data);
+  // Валидация входящих данных через Zod
+  const parseResult = updateOrderSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    throw new HttpError(400, "Invalid input: " + parseResult.error.message);
+  }
+
+  // Преобразуем строковые числовые поля к числу, если нужно
+  const dataToUpdate = { ...parseResult.data };
+  if (dataToUpdate.total !== undefined) {
+    dataToUpdate.total = Number(dataToUpdate.total);
+    if (Number.isNaN(dataToUpdate.total)) {
+      throw new HttpError(400, "Total must be a number");
+    }
+  }
+
+  // Обновляем заказ
+  const updated = await updateOrder(id, dataToUpdate);
 
   if (!updated) {
     throw new HttpError(404, "Order not found");
@@ -85,12 +80,7 @@ export async function updateOrderController(req: Request, res: Response) {
 // DELETE
 export async function deleteOrderController(req: Request, res: Response) {
   const id = Number(req.params.id);
-
-  if (Number.isNaN(id)) {
-    throw new HttpError(400, "Invalid order id");
-  }
-
-  await deleteOrder(id);
-
+  const deleted = await deleteOrder(id);
+  if (!deleted) throw new HttpError(404, "Order not found");
   return res.json({ success: true });
 }

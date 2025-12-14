@@ -6,6 +6,7 @@ import {
   updateUser,
   deleteUser,
 } from "../services/user.service.js";
+import { createUserSchema, updateUserSchema } from "../schemas/user.schema.js";
 import { HttpError } from "../utils/httpError.js";
 
 // Получить всех пользователей
@@ -28,39 +29,38 @@ export async function getUserByIdController(req: Request, res: Response) {
 
 // Создать пользователя
 export async function createUserController(req: Request, res: Response) {
-  const { email, password, name } = req.body;
+  const parseResult = createUserSchema.safeParse(req.body);
 
-  if (!email || !password) {
-    throw new HttpError(400, "email and password required");
+  if (!parseResult.success) {
+    // Если данные невалидные — выбрасываем ошибку
+    throw new HttpError(400, "Invalid input: " + parseResult.error.message);
   }
 
+  const { email, password, name } = parseResult.data;
   const user = await createUser({ email, password, name });
-  return res.status(201).json(user);
+
+  res.status(201).json(user);
 }
 
 
 // Обновить пользователя
 export async function updateUserController(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const data = req.body;
-
-  try {
-    const updated = await updateUser(id, data);
-    res.json(updated);
-  } catch (e: any) {
-    res.status(404).json({ error: "User not found" });
+  const parseResult = updateUserSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    throw new HttpError(400, "Invalid input: " + parseResult.error.message);
   }
+
+  const updated = await updateUser(id, parseResult.data);
+  if (!updated) throw new HttpError(404, "User not found");
+  return res.json(updated);
 }
 
 // Удалить пользователя
 export async function deleteUserController(req: Request, res: Response) {
   const id = Number(req.params.id);
-
-  try {
-    await deleteUser(id);
-    res.json({ success: true });
-  } catch (e: any) {
-    res.status(404).json({ error: "User not found" });
-  }
+  const deleted = await deleteUser(id);
+  if (!deleted) throw new HttpError(404, "User not found");
+  return res.json({ success: true });
 }
 

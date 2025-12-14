@@ -1,0 +1,36 @@
+### Production settings ###
+
+1. server.ts
+
+app.use(cors({
+  origin: "https://stu-sweets.com", // твой будущий домен
+  credentials: true,
+}));
+
+### DB ###
+
+SELECT * FROM public."Product";
+
+Product table имеет поле categoryId, сейчас оно null
+таблица Category пуста, имеет поля id, name - для будущих дополнений
+
+### Backend logic ###
+
+routes – принимает запросы
+
+controllers – валидирует, вызывает сервисы
+
+services – работают с Prisma
+
+prisma/client.ts – единый PrismaClient
+
+Update order:
+Cannot and should not update id, items, dateCreated
+
+### Валидация входящих данных с ZOD ###
+sudo npm install zod
+
+### Хеширование паролей с bcrypt ###
+
+npm install bcrypt
+npm install -D @types/bcrypt
