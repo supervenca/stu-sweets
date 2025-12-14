@@ -6,6 +6,7 @@ import {
   updateUser,
   deleteUser,
 } from "../services/user.service.js";
+import { HttpError } from "../utils/httpError.js";
 
 // Получить всех пользователей
 export async function getAllUsersController(req: Request, res: Response) {
@@ -18,25 +19,25 @@ export async function getUserByIdController(req: Request, res: Response) {
   const id = Number(req.params.id);
   const user = await getUserById(id);
 
-  if (!user) return res.status(404).json({ error: "User not found" });
+  if (!user) {
+    throw new HttpError(404, "User not found");
+  }
 
-  res.json(user);
+  return res.json(user);
 }
 
 // Создать пользователя
 export async function createUserController(req: Request, res: Response) {
   const { email, password, name } = req.body;
+
   if (!email || !password) {
-    return res.status(400).json({ error: "email and password required" });
+    throw new HttpError(400, "email and password required");
   }
 
-  try {
-    const user = await createUser({ email, password, name });
-    res.status(201).json(user);
-  } catch (e: any) {
-    res.status(500).json({ error: e.message });
-  }
+  const user = await createUser({ email, password, name });
+  return res.status(201).json(user);
 }
+
 
 // Обновить пользователя
 export async function updateUserController(req: Request, res: Response) {

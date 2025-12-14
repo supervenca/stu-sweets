@@ -1,5 +1,6 @@
 import prisma from "../prisma/client.js";
 import type { CreateUserDto, UpdateUserDto } from "../types/user.js";
+import { HttpError } from "../utils/httpError.js";
 
 export async function getAllUsers() {
   return prisma.user.findMany();
@@ -14,13 +15,26 @@ export async function createUser(data: CreateUserDto) {
 }
 
 export async function updateUser(id: number, data: UpdateUserDto) {
-  return prisma.user.update({
-    where: { id },
-    data,
-  });
+  try {
+    return await prisma.user.update({
+      where: { id },
+      data,
+    });
+  } catch (e: any) {
+    if (e.code === "P2025") {
+      throw new HttpError(404, "User not found");
+    }
+    throw e;
+  }
 }
 
 export async function deleteUser(id: number) {
-  return prisma.user.delete({ where: { id } });
+  try {
+    return await prisma.user.delete({ where: { id } });
+  } catch (e: any) {
+    if (e.code === "P2025") {
+      throw new HttpError(404, "User not found");
+    }
+    throw e;
+  }
 }
-
