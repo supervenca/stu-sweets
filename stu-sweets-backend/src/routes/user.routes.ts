@@ -6,8 +6,11 @@ import {
   updateUserController,
   deleteUserController,
 } from "../controllers/user.controller.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
+
+router.use(authMiddleware); // 👈 защита всех роутов ниже
 
 router.get("/", getAllUsersController);
 router.get("/:id", getUserByIdController);
