@@ -30,7 +30,7 @@ Cannot and should not update id, items, dateCreated
 ### Валидация входящих данных с ZOD ###
 sudo npm install zod
 
-### Хеширование паролей с bcrypt ###
+### Хеширование паролей Node.js + bcrypt ###
 
-npm install bcrypt
-npm install -D @types/bcrypt
+sudo npm install bcrypt
+sudo npm install -D @types/bcrypt

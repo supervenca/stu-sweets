@@ -9,10 +9,16 @@ import {
 import { createUserSchema, updateUserSchema } from "../schemas/user.schema.js";
 import { HttpError } from "../utils/httpError.js";
 
+// Защита от выдачи пароля
+function sanitizeUser(user: any) {
+  const { password, ...safeUser } = user;
+  return safeUser;
+}
+
 // Получить всех пользователей
 export async function getAllUsersController(req: Request, res: Response) {
   const users = await getAllUsers();
-  res.json(users);
+  res.json(users.map(sanitizeUser));
 }
 
 // Получить пользователя по id
@@ -24,7 +30,7 @@ export async function getUserByIdController(req: Request, res: Response) {
     throw new HttpError(404, "User not found");
   }
 
-  return res.json(user);
+  return res.json(sanitizeUser(user));
 }
 
 // Создать пользователя
@@ -39,7 +45,7 @@ export async function createUserController(req: Request, res: Response) {
   const { email, password, name } = parseResult.data;
   const user = await createUser({ email, password, name });
 
-  res.status(201).json(user);
+  res.status(201).json(sanitizeUser(user));
 }
 
 
@@ -53,7 +59,7 @@ export async function updateUserController(req: Request, res: Response) {
 
   const updated = await updateUser(id, parseResult.data);
   if (!updated) throw new HttpError(404, "User not found");
-  return res.json(updated);
+  return res.json(sanitizeUser(updated));
 }
 
 // Удалить пользователя
