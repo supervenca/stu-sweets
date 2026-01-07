@@ -19,3 +19,5 @@ router.put("/:id", updateUserController);
 router.delete("/:id", deleteUserController);
 
 export default router;
+
+//пока что отключено от server.ts за ненадобностью (может понадобиться позже, если мы введем user roles и появятся юзеры-клиенты). внутренние роуты для работы с юзерами админом в панели администратора - internal.user.routes.ts

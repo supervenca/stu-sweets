@@ -92,3 +92,5 @@ export async function loginController(req: Request, res: Response) {
     user: { id: user.id, email: user.email, name: user.name },
   });
 }
+
+//пока что отключено от server.ts за ненадобностью (может понадобиться позже, если мы введем user roles и появятся юзеры-клиенты)
