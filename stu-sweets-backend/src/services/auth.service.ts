@@ -1,5 +1,5 @@
-// src/services/auth.service.ts
 import prisma from "../prisma/client.js";
+import { $Enums } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -17,11 +17,16 @@ export async function authenticateUser(email: string, password: string) {
 }
 
 // Генерация JWT
-export function generateToken(user: { id: number; email: string }) {
+export function generateToken(user: {
+  id: number;
+  email: string;
+  role: $Enums.UserRole;
+}) {
   return jwt.sign(
     {
       userId: user.id,
       email: user.email,
+      role: user.role,
     },
     JWT_SECRET,
     { expiresIn: "1h" }
@@ -33,7 +38,11 @@ export async function login(email: string, password: string) {
   const user = await authenticateUser(email, password);
   if (!user) return null;
 
-  const token = generateToken({ id: user.id, email: user.email });
+  const token = generateToken({ 
+    id: user.id, 
+    email: user.email,
+    role: user.role
+  });
 
   // Не отдаём пароль
   const { password: _, ...userSafe } = user;

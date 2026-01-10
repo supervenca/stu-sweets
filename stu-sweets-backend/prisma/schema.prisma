@@ -15,13 +15,19 @@ enum OrderStatus {
   CANCELED
 }
 
-// User = only Admin
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
   password  String
   name      String?
-  createdAt DateTime @default(now())
+  role      UserRole  @default(ADMIN)
+
+  createdAt DateTime  @default(now())
 }
 
 model Category {

@@ -18,4 +18,4 @@ docker-compose.override.yml
 .DS_Store
 
 # Test/debug files
-test.txt
+comment.txt

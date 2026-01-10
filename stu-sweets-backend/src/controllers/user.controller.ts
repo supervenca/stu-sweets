@@ -84,8 +84,11 @@ export async function loginController(req: Request, res: Response) {
     throw new HttpError(401, "Invalid email or password");
   }
 
-  // Передаем объект с id и email
-  const token = generateToken({ id: user.id, email: user.email });
+  const token = generateToken({
+  id: user.id,
+  email: user.email,
+  role: user.role,
+});
 
   res.json({
     token,
