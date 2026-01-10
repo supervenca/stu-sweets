@@ -6,7 +6,9 @@ import cors from "cors";
 //import userRoutes from "./routes/user.routes.js";
 import internalUserRoutes from "./routes/internal.user.routes.js";
 import productRoutes from "./routes/product.routes.js";
+import internalProductRoutes from "./routes/internalProduct.routes.js";
 import orderRoutes from "./routes/order.routes.js";
+import internalOrderRoutes from "./routes/internalOrder.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 
@@ -24,6 +26,8 @@ app.get("/", (_, res) => res.send("Stu Sweets backend is running!"));
 // app.use("/users", userRoutes); - temporarily disabled as not needed (may be needed later if we introduce user roles and have user-clients)
 app.use("/internal/users", internalUserRoutes);
 app.use("/products", productRoutes);
+app.use("/internal/products", internalProductRoutes);
+app.use("/internal/orders", internalOrderRoutes);
 app.use("/orders", orderRoutes);
 app.use("/auth", authRoutes);
 
