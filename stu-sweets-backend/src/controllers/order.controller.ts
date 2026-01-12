@@ -9,7 +9,6 @@ import {
 import { createOrderSchema, updateOrderSchema } from "../schemas/order.schema.js";
 import { HttpError } from "../utils/httpError.js";
 
-// Публичные GET — для сайта
 export async function getAllOrdersPublicController(req: Request, res: Response) {
   const orders = await getAllOrders();
   return res.json(orders);
@@ -25,7 +24,6 @@ export async function getOrderByIdPublicController(req: Request, res: Response) 
   return res.json(order);
 }
 
-// Админские действия
 export async function createOrderController(req: Request, res: Response) {
   const parseResult = createOrderSchema.safeParse(req.body);
   if (!parseResult.success) throw new HttpError(400, "Invalid input: " + parseResult.error.message);

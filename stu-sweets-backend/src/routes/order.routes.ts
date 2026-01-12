@@ -1,13 +1,14 @@
 import { Router } from "express";
 import {
-  getAllOrdersPublicController,
+  createOrderController,
   getOrderByIdPublicController,
 } from "../controllers/order.controller.js";
 
 const router = Router();
 
-router.get("/", getAllOrdersPublicController);
+
 router.get("/:id", getOrderByIdPublicController);
+router.post("/", createOrderController);
 
 export default router;
 
