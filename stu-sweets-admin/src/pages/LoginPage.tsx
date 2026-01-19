@@ -17,18 +17,24 @@ const LoginPage = () => {
     setError(null);
     setLoading(true);
 
-    try {
-  await httpClient.post("/auth/login", { email, password });
-  navigate("/");
-} catch (err: unknown) {
-  if (axios.isAxiosError(err)) {
-    setError(err.response?.data?.message || "Ошибка входа");
-  } else {
-    setError("Неизвестная ошибка");
-  }
-} finally {
-  setLoading(false);
-}
+try {
+      // 🔹 Сохраняем ответ сервера
+      const res = await httpClient.post("/auth/login", { email, password });
+
+      // 🔹 Сохраняем JWT в localStorage
+      localStorage.setItem("token", res.data.token);
+
+      // 🔹 Переходим на dashboard
+      navigate("/");
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "Ошибка входа");
+      } else {
+        setError("Неизвестная ошибка");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
