@@ -1,4 +1,16 @@
+import { useNavigate } from "react-router-dom";
+
 const Header = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // 1. удаляем токен
+    localStorage.removeItem("token");
+
+    // 2. редирект на логин (без возможности вернуться назад)
+    navigate("/login", { replace: true });
+  };
+
   return (
     <header
       style={{
@@ -12,7 +24,10 @@ const Header = () => {
       }}
     >
       <span>Admin panel</span>
-      <button>Logout</button>
+
+      <button onClick={handleLogout}>
+        Logout
+      </button>
     </header>
   );
 };
