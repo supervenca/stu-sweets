@@ -9,6 +9,8 @@ import productRoutes from "./routes/product.routes.js";
 import internalProductRoutes from "./routes/internalProduct.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import internalOrderRoutes from "./routes/internalOrder.routes.js";
+import categoriesPublicRoutes from "./routes/categories.routes.js";
+import categoriesInternalRoutes from "./routes/categories.internal.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 
@@ -31,6 +33,9 @@ app.use("/internal/users", internalUserRoutes);
 app.use("/products", productRoutes);
 app.use("/internal/products", internalProductRoutes);
 app.use("/internal/orders", internalOrderRoutes);
+app.use("/categories", categoriesPublicRoutes);
+app.use("/internal/categories", categoriesInternalRoutes);
+
 app.use("/orders", orderRoutes);
 app.use("/auth", authRoutes);
 

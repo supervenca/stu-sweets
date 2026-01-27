@@ -1,29 +1,21 @@
 import { Navigate, Outlet } from "react-router-dom";
-
-const isTokenValid = () => {
-  const token = localStorage.getItem("token");
-  if (!token) return false;
-
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    const now = Date.now();
-
-    if (payload.exp && now >= payload.exp * 1000) {
-      localStorage.removeItem("token");
-      return false;
-    }
-
-    return true;
-  } catch {
-    localStorage.removeItem("token");
-    return false;
-  }
-};
+import { useEffect } from "react";
+import { useAuthStore } from "./auth.store";
 
 const ProtectedRoute = () => {
-  const allowed = isTokenValid();
+  const user = useAuthStore((state) => state.user);
+  const loading = useAuthStore((state) => state.loading);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
 
-  if (!allowed) {
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 

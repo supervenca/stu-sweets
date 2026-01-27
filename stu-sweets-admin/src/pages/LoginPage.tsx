@@ -14,6 +14,7 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError(null);
     setLoading(true);
 
@@ -27,12 +28,16 @@ try {
       // 🔹 Переходим на dashboard
       navigate("/");
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Ошибка входа");
-      } else {
-        setError("Неизвестная ошибка");
-      }
-    } finally {
+  if (axios.isAxiosError(err)) {
+    if (err.response?.status === 401) {
+      setError("Wrong email or password");
+    } else {
+      setError("Login error. Please try again later");
+    }
+  } else {
+    setError("Unknown error");
+  }
+} finally {
       setLoading(false);
     }
   };
