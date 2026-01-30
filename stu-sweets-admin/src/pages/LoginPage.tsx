@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import httpClient from "../api/httpClient";
 import axios from "axios";
+import { useAuthStore } from "../auth/auth.store";
 
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { checkAuth } = useAuthStore();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,13 +21,14 @@ const LoginPage = () => {
     setLoading(true);
 
 try {
-      // 🔹 Сохраняем ответ сервера
+      // Сохраняем ответ сервера
       const res = await httpClient.post("/auth/login", { email, password });
 
-      // 🔹 Сохраняем JWT в localStorage
+      // Сохраняем JWT в localStorage
       localStorage.setItem("token", res.data.token);
-
-      // 🔹 Переходим на dashboard
+      // Обновляем store, чтобы ProtectedRoute сразу видел user
+      await checkAuth();
+      // Переходим на dashboard
       navigate("/");
     } catch (err: unknown) {
   if (axios.isAxiosError(err)) {

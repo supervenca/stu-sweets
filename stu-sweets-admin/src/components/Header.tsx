@@ -3,7 +3,7 @@ import { useAuthStore } from "../auth/auth.store";
 
 const Header = () => {
   const navigate = useNavigate();
-const logout = useAuthStore((s) => s.logout);
+  const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
     logout();
@@ -24,9 +24,26 @@ const logout = useAuthStore((s) => s.logout);
     >
       <span>Admin panel</span>
 
-      <button onClick={handleLogout}>
-        Logout
-      </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        {user && (
+          <span style={{ fontWeight: "bold", color: "#333" }}>
+            {user.email} {/* Можно заменить на user.name, если есть */}
+          </span>
+        )}
+        <button
+          onClick={handleLogout}
+          style={{
+            padding: "6px 12px",
+            background: "#ef4444",
+            color: "#fff",
+            border: "none",
+            borderRadius: 4,
+            cursor: "pointer",
+          }}
+        >
+          Logout
+        </button>
+      </div>
     </header>
   );
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useCategoriesStore } from "../stores/categories.store";
 
 const CategoriesPage = () => {
@@ -15,16 +15,40 @@ const CategoriesPage = () => {
   const [name, setName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [pendingId, setPendingId] = useState<number | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isAddDisabled = !name.trim();
+  const isSaveDisabled = !editingName.trim();
+
+
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  useEffect(() => {
+  if (editingId !== null) {
+    inputRef.current?.focus();
+  }
+}, [editingId]);
+
 
   const handleCreate = async () => {
     if (!name.trim()) return;
     await createCategory(name);
     setName("");
   };
+
+  const handleSave = async (id: number) => {
+  if (!editingName.trim()) return;
+
+  setPendingId(id);
+  await updateCategory(id, editingName);
+  setPendingId(null);
+
+  setEditingId(null);
+};
+
 
   if (loading) return <div>Loading categories...</div>;
   if (error) return <div style={{ color: "red" }}>{error}</div>;
@@ -53,7 +77,10 @@ const CategoriesPage = () => {
           onChange={(e) => setName(e.target.value)}
           placeholder="Category name"
         />
-        <button onClick={handleCreate} style={{ marginLeft: 8 }}>
+        <button 
+            onClick={handleCreate} 
+            style={{ marginLeft: 8 }}
+            disabled={isAddDisabled}>
           Add
         </button>
       </div>
@@ -75,23 +102,28 @@ const CategoriesPage = () => {
               <tr key={cat.id}>
                 <td style={tableStyles.td}>{cat.id}</td>
                 <td style={tableStyles.td}>{editingId === cat.id ? (
-                  <input value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}/>
+                  <input 
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    ref={inputRef}/>
                 ) : (cat.name)}
                 </td>
                 <td style={tableStyles.td}>
   {editingId === cat.id ? (
     <>
       <button
-        onClick={async () => {
-          if (!editingName.trim()) return;
-          await updateCategory(cat.id, editingName);
-          setEditingId(null);
-        }}
-      >
-        Save
-      </button>{" "}
-      <button onClick={() => setEditingId(null)}>Cancel</button>
+        onClick={() => handleSave(cat.id)}
+        disabled={isSaveDisabled || pendingId === cat.id}>
+          {pendingId === cat.id ? "Saving..." : "Save"}
+      </button>
+      {" "}
+      <button
+          onClick={() => {
+            setEditingId(null);
+            setEditingName("");
+          }}>Cancel
+      </button>
+
     </>
   ) : (
     <>
