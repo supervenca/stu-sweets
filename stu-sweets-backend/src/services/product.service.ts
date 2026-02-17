@@ -4,11 +4,16 @@ import { CreateProductDto, UpdateProductDto } from "../types/product.js";
 import { HttpError } from "../utils/httpError.js";
 
 export async function getAllProducts() {
-  return prisma.product.findMany();
+  return prisma.product.findMany({
+  include: {category: true}
+  });
 }
 
 export async function getProductById(id: number) {
-  return prisma.product.findUnique({ where: { id } });
+  return prisma.product.findUnique({ 
+    where: { id },
+    include: {category: true}
+   });
 }
 
 export async function createProduct(data: CreateProductDto) {
@@ -17,6 +22,7 @@ export async function createProduct(data: CreateProductDto) {
       ...data,
       stock: data.stock ?? 0,
     },
+    include: { category: true }
   });
 }
 
@@ -25,6 +31,7 @@ export async function updateProduct(id: number, data: UpdateProductDto) {
     return await prisma.product.update({
       where: { id },
       data,
+      include: { category: true }
     });
   } catch (e: any) {
     if (e.code === "P2025") {

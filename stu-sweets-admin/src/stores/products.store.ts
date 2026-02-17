@@ -37,7 +37,7 @@ export const useProductsStore = create<ProductsState>((set) => ({
   fetchProducts: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await api.get("/products");
+      const res = await api.get("/internal/products");
       set({ products: res.data, loading: false });
     } catch {
       set({ error: "Failed to load products", loading: false });
@@ -57,7 +57,7 @@ export const useProductsStore = create<ProductsState>((set) => ({
 
   updateProduct: async (id, data) => {
     try {
-      const res = await api.patch(`/internal/products/${id}`, data);
+      const res = await api.put(`/internal/products/${id}`, data);
       set((state) => ({
         products: state.products.map((p) =>
           p.id === id ? res.data : p
