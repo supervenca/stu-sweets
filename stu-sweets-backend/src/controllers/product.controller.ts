@@ -28,8 +28,9 @@ export async function getProductByIdPublicController(req: Request, res: Response
 // Админские действия (CRUD)
 export async function createProductController(req: Request, res: Response) {
   const parseResult = createProductSchema.safeParse(req.body);
-  if (!parseResult.success) throw new HttpError(400, "Invalid input: " + parseResult.error.message);
+  console.log("PARSED DATA:", parseResult.data);
 
+  if (!parseResult.success) throw new HttpError(400, "Invalid input: " + parseResult.error.message);
   const product = await createProduct(parseResult.data);
   return res.status(201).json(product);
 }
@@ -40,7 +41,6 @@ export async function updateProductController(req: Request, res: Response) {
 
   const parseResult = updateProductSchema.safeParse(req.body);
   if (!parseResult.success) throw new HttpError(400, "Invalid input: " + parseResult.error.message);
-
   const updated = await updateProduct(id, parseResult.data);
   if (!updated) throw new HttpError(404, "Product not found");
 

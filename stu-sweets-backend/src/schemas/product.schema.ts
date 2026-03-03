@@ -6,6 +6,7 @@ export const createProductSchema = z.object({
   description: z.string().optional(),
   price: z.number().positive(),
   stock: z.number().int().nonnegative().optional(),
+  categoryId: z.coerce.number().int().positive().optional().nullable()
 });
 
 // Схема для обновления продукта
@@ -14,4 +15,5 @@ export const updateProductSchema = z.object({
   description: z.string().optional(),
   price: z.number().positive().optional(),
   stock: z.number().int().nonnegative().optional(),
+  categoryId: z.coerce.number().int().positive().optional().nullable()
 });

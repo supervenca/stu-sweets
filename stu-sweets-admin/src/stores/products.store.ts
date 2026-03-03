@@ -5,6 +5,7 @@ export type Product = {
   id: number;
   name: string;
   price: number;
+  description: string;
   categoryId: number | null;
   category?: {
     id: number;
@@ -15,6 +16,7 @@ export type Product = {
 type CreateProductDto = {
   name: string;
   price: number;
+  description: string;
   categoryId: number | null;
 };
 
@@ -38,6 +40,7 @@ export const useProductsStore = create<ProductsState>((set) => ({
     set({ loading: true, error: null });
     try {
       const res = await api.get("/internal/products");
+      console.log("Fetched products:", res.data);
       set({ products: res.data, loading: false });
     } catch {
       set({ error: "Failed to load products", loading: false });
@@ -45,8 +48,10 @@ export const useProductsStore = create<ProductsState>((set) => ({
   },
 
   createProduct: async (data) => {
+    console.log("Creating product with data:", data);
     try {
       const res = await api.post("/internal/products", data);
+      console.log("Response from server:", res.data);
       set((state) => ({
         products: [...state.products, res.data],
       }));
@@ -56,8 +61,10 @@ export const useProductsStore = create<ProductsState>((set) => ({
   },
 
   updateProduct: async (id, data) => {
+    console.log("Updating product", id, "with data:", data);
     try {
       const res = await api.put(`/internal/products/${id}`, data);
+      console.log("Response from server:", res.data);
       set((state) => ({
         products: state.products.map((p) =>
           p.id === id ? res.data : p

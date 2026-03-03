@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useCategoriesStore } from "../stores/categories.store";
+import toast from "react-hot-toast";
 
 const CategoriesPage = () => {
   const {
@@ -17,56 +18,111 @@ const CategoriesPage = () => {
   const [editingName, setEditingName] = useState("");
   const [pendingId, setPendingId] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
   const isAddDisabled = !name.trim();
   const isSaveDisabled = !editingName.trim();
-
-
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
   useEffect(() => {
-  if (editingId !== null) {
-    inputRef.current?.focus();
-  }
-}, [editingId]);
-
+    if (editingId !== null) inputRef.current?.focus();
+  }, [editingId]);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
-    await createCategory(name);
+
+    await toast.promise(
+      createCategory(name),
+      {
+        loading: "Creating...",
+        success: "Category created",
+        error: "Failed to create category",
+      }
+    );
+
     setName("");
   };
 
   const handleSave = async (id: number) => {
-  if (!editingName.trim()) return;
+    if (!editingName.trim()) return;
 
-  setPendingId(id);
-  await updateCategory(id, editingName);
-  setPendingId(null);
+    const confirmed = await toast.promise(
+      new Promise<boolean>((resolve) => {
+        const ok = confirm(`Save changes to category "${editingName}"?`);
+        resolve(ok);
+      }),
+      {
+        loading: "Confirming...",
+        success: "",
+        error: "Cancelled",
+      }
+    );
 
-  setEditingId(null);
-};
+    if (!confirmed) return;
 
+    setPendingId(id);
+    await toast.promise(
+      updateCategory(id, editingName),
+      {
+        loading: "Saving...",
+        success: "Category updated",
+        error: "Failed to update category",
+      }
+    );
+    setPendingId(null);
+    setEditingId(null);
+  };
+
+  const handleDelete = (id: number, name: string) => {
+    toast((t) => (
+      <div
+        style={{
+          minWidth: 280,
+          textAlign: "center",
+          padding: 16,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
+        <p>Delete category <b>{name}</b>?</p>
+        <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancel
+          </button>
+          <button
+            style={{ background: "#ef4444", color: "#fff" }}
+            onClick={async () => {
+              toast.dismiss(t.id);
+              await toast.promise(
+                deleteCategory(id),
+                {
+                  loading: "Deleting...",
+                  success: "Category deleted",
+                  error: "Failed to delete category",
+                }
+              );
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ), { duration: 10000 });
+  };
 
   if (loading) return <div>Loading categories...</div>;
   if (error) return <div style={{ color: "red" }}>{error}</div>;
 
   return (
     <div>
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <h1>
-          Categories{" "}
-          <span style={{ color: "#6b7280" }}>({categories.length})</span>
+          Categories <span style={{ color: "#6b7280" }}>({categories.length})</span>
         </h1>
       </div>
 
@@ -77,15 +133,16 @@ const CategoriesPage = () => {
           onChange={(e) => setName(e.target.value)}
           placeholder="Category name"
         />
-        <button 
-            onClick={handleCreate} 
-            style={{ marginLeft: 8 }}
-            disabled={isAddDisabled}>
+        <button
+          onClick={handleCreate}
+          style={{ marginLeft: 8 }}
+          disabled={isAddDisabled}
+        >
           Add
         </button>
       </div>
 
-      {/* Empty */}
+      {/* Table */}
       {categories.length === 0 ? (
         <p>No categories yet</p>
       ) : (
@@ -101,53 +158,49 @@ const CategoriesPage = () => {
             {categories.map((cat) => (
               <tr key={cat.id}>
                 <td style={tableStyles.td}>{cat.id}</td>
-                <td style={tableStyles.td}>{editingId === cat.id ? (
-                  <input 
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    ref={inputRef}/>
-                ) : (cat.name)}
+                <td style={tableStyles.td}>
+                  {editingId === cat.id ? (
+                    <input
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      ref={inputRef}
+                    />
+                  ) : (
+                    cat.name
+                  )}
                 </td>
                 <td style={tableStyles.td}>
-  {editingId === cat.id ? (
-    <>
-      <button
-        onClick={() => handleSave(cat.id)}
-        disabled={isSaveDisabled || pendingId === cat.id}>
-          {pendingId === cat.id ? "Saving..." : "Save"}
-      </button>
-      {" "}
-      <button
-          onClick={() => {
-            setEditingId(null);
-            setEditingName("");
-          }}>Cancel
-      </button>
-
-    </>
-  ) : (
-    <>
-      <button
-        onClick={() => {
-          setEditingId(cat.id);
-          setEditingName(cat.name);
-        }}
-      >
-        Edit
-      </button>{" "}
-      <button
-        onClick={() => {
-          if (confirm("Delete this category?")) {
-            deleteCategory(cat.id);
-          }
-        }}
-      >
-        Delete
-      </button>
-    </>
-  )}
-</td>
-
+                  {editingId === cat.id ? (
+                    <>
+                      <button
+                        onClick={() => handleSave(cat.id)}
+                        disabled={isSaveDisabled || pendingId === cat.id}
+                      >
+                        {pendingId === cat.id ? "Saving..." : "Save"}
+                      </button>{" "}
+                      <button
+                        onClick={() => {
+                          setEditingId(null);
+                          setEditingName("");
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          setEditingId(cat.id);
+                          setEditingName(cat.name);
+                        }}
+                      >
+                        Edit
+                      </button>{" "}
+                      <button onClick={() => handleDelete(cat.id, cat.name)}>Delete</button>
+                    </>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -160,19 +213,7 @@ const CategoriesPage = () => {
 export default CategoriesPage;
 
 const tableStyles: Record<string, React.CSSProperties> = {
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    background: "#fff",
-  },
-  th: {
-    textAlign: "left",
-    padding: "12px",
-    borderBottom: "2px solid #e5e7eb",
-  },
-  td: {
-    padding: "12px",
-    borderBottom: "1px solid #e5e7eb",
-  },
+  table: { width: "100%", borderCollapse: "collapse", background: "#fff" },
+  th: { textAlign: "left", padding: "12px", borderBottom: "2px solid #e5e7eb" },
+  td: { padding: "12px", borderBottom: "1px solid #e5e7eb" },
 };
-

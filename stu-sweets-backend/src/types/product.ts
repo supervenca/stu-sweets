@@ -3,6 +3,7 @@ export interface CreateProductDto {
   description?: string;
   price: number;
   stock?: number;
+  categoryId?: number | null;
 }
 
 export interface UpdateProductDto {
@@ -10,4 +11,5 @@ export interface UpdateProductDto {
   description?: string;
   price?: number;
   stock?: number;
+  categoryId?: number | null;
 }

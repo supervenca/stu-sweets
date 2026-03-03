@@ -17,30 +17,35 @@ const ProductsPage = () => {
 
   const { categories, fetchCategories } = useCategoriesStore();
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [categoryId, setCategoryId] = useState<number | "">("");
+  const [categoryId, setCategoryId] = useState<number | null>(null);
   const [pendingId, setPendingId] = useState<number | null>(null);
 
 
   const [errors, setErrors] = useState<{
   name?: string;
   price?: string;
+  description?: string;
 }>({});
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingData, setEditingData] = useState<{
     name: string;
     price: string;
-    categoryId: number | "";
+    categoryId: number | null;
+    description: string;
   }>({
     name: "",
     price: "",
-    categoryId: "",
+    categoryId: null,
+    description: "",
   });
 
   const [editErrors, setEditErrors] = useState<{
     name?: string;
     price?: string;
+    description?: string;
   }>({});
 
 
@@ -61,7 +66,8 @@ const ProductsPage = () => {
       createProduct({
         name: name.trim(),
         price: Number(price),
-        categoryId: categoryId === "" ? null : Number(categoryId),
+        categoryId: categoryId,
+        description: description.trim()
       }),
       {
         loading: "Adding product...",
@@ -71,8 +77,9 @@ const ProductsPage = () => {
     );
 
     setName("");
+    setDescription("");
     setPrice("");
-    setCategoryId("");
+    setCategoryId(null);
     setErrors({});
   } catch {console.error(error)}
 };
@@ -121,7 +128,8 @@ const handleSave = async (id: number) => {
       updateProduct(id, {
         name: editingData.name.trim(),
         price: Number(editingData.price),
-        categoryId: editingData.categoryId === "" ? null : Number(editingData.categoryId),
+        description: editingData.description.trim(),
+        categoryId: editingData.categoryId,
       }),
       {
         loading: "Saving changes...",
@@ -151,9 +159,10 @@ const handleDelete = async (id: number) => {
 };
 
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, [fetchProducts, fetchCategories]);
+  fetchProducts();
+  fetchCategories().then(() => {
+  });
+}, [fetchProducts, fetchCategories]);
 
   if (loading) return <p>Loading products...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
@@ -179,7 +188,7 @@ const handleDelete = async (id: number) => {
     marginRight: 8,
     borderColor: errors.name ? "red" : undefined,
   }}
-/>
+  />
 {errors.name && (
   <div style={{ color: "red", fontSize: 12 }}>{errors.name}</div>
 )}
@@ -203,21 +212,39 @@ const handleDelete = async (id: number) => {
 )}
 
   <select
-    value={categoryId}
-    onChange={(e) =>
-      setCategoryId(
-        e.target.value === "" ? "" : Number(e.target.value)
-      )
-    }
-    style={{ marginRight: 8 }}
-  >
-    <option value="">No category</option>
-    {categories.map((cat) => (
-      <option key={cat.id} value={cat.id}>
-        {cat.name}
-      </option>
-    ))}
-  </select>
+  value={categoryId ?? ""} 
+  onChange={(e) =>
+    setCategoryId(
+      e.target.value === "" ? null : Number(e.target.value)
+    )
+  }
+  style={{ marginRight: 8 }}
+>
+  <option value="">No category</option>
+  {categories.map((cat) => (
+    <option key={cat.id} value={cat.id}>
+      {cat.name}
+    </option>
+  ))}
+</select>
+
+<input
+  placeholder="Description"
+  value={description}
+  onChange={(e) => {
+    setDescription(e.target.value);
+    setErrors((prev) => ({ ...prev, description: undefined }));
+  }}
+  style={{
+    marginRight: 8,
+    borderColor: errors.description ? "red" : undefined,
+  }}
+/>
+{errors.description && (
+  <div style={{ color: "red", fontSize: 12 }}>
+    {errors.description}
+  </div>
+)}
 
   <button onClick={handleCreate}>Add product</button>
 </div>
@@ -229,10 +256,11 @@ const handleDelete = async (id: number) => {
           <thead>
             <tr>
               <th style={tableStyles.th}>ID</th>
-              <th style={tableStyles.th}>Name</th>
-              <th style={tableStyles.th}>Price</th>
-              <th style={tableStyles.th}>Category</th>
-              <th style={tableStyles.th}>Actions</th>
+              <th style={tableStyles.th}>NAME</th>
+              <th style={tableStyles.th}>DESCRIPTION</th>
+              <th style={tableStyles.th}>PRICE</th>
+              <th style={tableStyles.th}>CATEGORY</th>
+              <th style={tableStyles.th}>ACTIONS</th>
             </tr>
           </thead>
           <tbody>
@@ -278,7 +306,36 @@ const handleDelete = async (id: number) => {
             p.name
           )}
         </td>
-
+        {/* DESCRIPTION */}
+        <td style={tableStyles.td}>
+          {isEditing ? (
+            <>
+              <input
+                value={editingData.description}
+                onChange={(e) => {
+                  setEditingData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }));
+                  setEditErrors((prev) => ({
+                    ...prev,
+                    description: undefined,
+                  }));
+                }}
+                style={{
+                  borderColor: editErrors.description ? "red" : undefined,
+                }}
+              />
+              {editErrors.description && (
+                <div style={{ color: "red", fontSize: 12 }}>
+                  {editErrors.description}
+                </div>
+              )}
+            </>
+          ) : (
+            p.description
+          )}
+        </td>
         {/* PRICE */}
         <td style={tableStyles.td}>
           {isEditing ? (
@@ -316,24 +373,21 @@ const handleDelete = async (id: number) => {
         <td style={tableStyles.td}>
           {isEditing ? (
             <select
-              value={editingData.categoryId}
-              onChange={(e) =>
-                setEditingData((prev) => ({
-                  ...prev,
-                  categoryId:
-                    e.target.value === ""
-                      ? ""
-                      : Number(e.target.value),
-                }))
-              }
-            >
-              <option value="">No category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+  value={editingData.categoryId ?? ""} 
+  onChange={(e) =>
+    setEditingData((prev) => ({
+      ...prev,
+      categoryId: e.target.value === "" ? null : Number(e.target.value),
+    }))
+  }
+>
+  <option value="">No category</option>
+  {categories.map((cat) => (
+    <option key={cat.id} value={cat.id}>
+      {cat.name}
+    </option>
+  ))}
+</select>
           ) : (
             p.category?.name ?? "—"
           )}
@@ -368,13 +422,11 @@ const handleDelete = async (id: number) => {
                   setEditingData({
                     name: p.name,
                     price: String(p.price),
-                    categoryId: p.categoryId ?? "",
+                    description: p.description,
+                    categoryId: p.categoryId ?? null,
                   });
                   setEditErrors({});
-                }}
-              >
-                Edit
-              </button>{" "}
+                }}>Edit</button>{" "}
               <button
                 onClick={() => handleDelete(p.id)}
                 disabled={pendingId === p.id}
