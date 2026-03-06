@@ -75,45 +75,18 @@ const CategoriesPage = () => {
     setEditingId(null);
   };
 
-  const handleDelete = (id: number, name: string) => {
-    toast((t) => (
-      <div
-        style={{
-          minWidth: 280,
-          textAlign: "center",
-          padding: 16,
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
-      >
-        <p>Delete category <b>{name}</b>?</p>
-        <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-          <button
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancel
-          </button>
-          <button
-            style={{ background: "#ef4444", color: "#fff" }}
-            onClick={async () => {
-              toast.dismiss(t.id);
-              await toast.promise(
-                deleteCategory(id),
-                {
-                  loading: "Deleting...",
-                  success: "Category deleted",
-                  error: "Failed to delete category",
-                }
-              );
-            }}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    ), { duration: 10000 });
-  };
+  const handleDelete = async (id: number) => {
+  const confirmed = window.confirm("Are you sure you want to delete this category? This action cannot be undone.");
+
+  if (!confirmed) return;
+
+  try {
+    await deleteCategory(id);
+  } catch (error) {
+    alert("Error occurred while deleting category");
+    console.error(error);
+  }
+};
 
   if (loading) return <div>Loading categories...</div>;
   if (error) return <div style={{ color: "red" }}>{error}</div>;
@@ -197,7 +170,7 @@ const CategoriesPage = () => {
                       >
                         Edit
                       </button>{" "}
-                      <button onClick={() => handleDelete(cat.id, cat.name)}>Delete</button>
+                      <button onClick={() => handleDelete(cat.id)}>Delete</button>
                     </>
                   )}
                 </td>

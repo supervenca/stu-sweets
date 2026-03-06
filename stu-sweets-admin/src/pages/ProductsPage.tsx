@@ -180,6 +180,7 @@ const handleDelete = async (id: number) => {
   <input
   placeholder="Product name"
   value={name}
+  maxLength={100}
   onChange={(e) => {
     setName(e.target.value);
     setErrors((prev) => ({ ...prev, name: undefined }));
@@ -227,19 +228,38 @@ const handleDelete = async (id: number) => {
     </option>
   ))}
 </select>
+<div style={{ position: "relative", display: "inline-block" }}>
+  <textarea
+    placeholder="Description"
+    value={description}
+    maxLength={500}
+    onChange={(e) => {
+      setDescription(e.target.value);
+      setErrors((prev) => ({ ...prev, description: undefined }));
+    }}
+    rows={3}
+    style={{
+      marginRight: 8,
+      minWidth: 250,
+      paddingBottom: 20,
+      resize: "vertical",
+      borderColor: errors.description ? "red" : undefined,
+    }}
+  />
 
-<input
-  placeholder="Description"
-  value={description}
-  onChange={(e) => {
-    setDescription(e.target.value);
-    setErrors((prev) => ({ ...prev, description: undefined }));
-  }}
-  style={{
-    marginRight: 8,
-    borderColor: errors.description ? "red" : undefined,
-  }}
-/>
+  <span
+    style={{
+      position: "absolute",
+      bottom: 4,
+      right: 10,
+      fontSize: 11,
+      color: "#6b7280",
+      pointerEvents: "none",
+    }}
+  >
+    {description.length}/500
+  </span>
+</div>
 {errors.description && (
   <div style={{ color: "red", fontSize: 12 }}>
     {errors.description}
@@ -310,22 +330,41 @@ const handleDelete = async (id: number) => {
         <td style={tableStyles.td}>
           {isEditing ? (
             <>
-              <input
-                value={editingData.description}
-                onChange={(e) => {
-                  setEditingData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }));
-                  setEditErrors((prev) => ({
-                    ...prev,
-                    description: undefined,
-                  }));
-                }}
-                style={{
-                  borderColor: editErrors.description ? "red" : undefined,
-                }}
-              />
+              <div style={{ position: "relative", display: "inline-block" }}>
+                  <textarea
+                    value={editingData.description}
+                    maxLength={500}
+                    rows={3}
+                    onChange={(e) => {
+                      setEditingData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }));
+                      setEditErrors((prev) => ({
+                        ...prev,
+                        description: undefined,
+                      }));
+                    }}
+                    style={{
+                      minWidth: 250,
+                      paddingBottom: 20,
+                      resize: "vertical",
+                      borderColor: editErrors.description ? "red" : undefined,
+                    }}
+                  />
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: 4,
+                      right: 10,
+                      fontSize: 11,
+                      color: "#6b7280",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    {editingData.description.length}/500
+                  </span>
+              </div>
               {editErrors.description && (
                 <div style={{ color: "red", fontSize: 12 }}>
                   {editErrors.description}
