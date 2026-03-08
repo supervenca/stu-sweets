@@ -41,3 +41,15 @@ export const updateOrderSchema = z.object({
   total: z.number().optional(),
 });
 
+// Схема для обновления позиции заказа (например, изменение количества или продукта)
+export const updateOrderItemSchema = z.object({
+  productId: z.number().int().optional(), // можно менять продукт
+  quantity: z.number().int().positive().optional(), // или количество
+  price: z.number().positive().optional(), // цена может обновляться
+});
+
+// Схема для добавления новой позиции в заказ
+export const addOrderItemSchema = z.object({
+  productId: z.number().int(),
+  quantity: z.number().int().positive(),
+});

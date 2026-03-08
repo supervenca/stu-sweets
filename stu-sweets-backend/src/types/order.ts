@@ -1,7 +1,7 @@
 export interface OrderItemDto {
   productId: number;
   quantity: number;
-  price: number;
+  price?: number;
 }
 
 export interface CreateOrderDto {
