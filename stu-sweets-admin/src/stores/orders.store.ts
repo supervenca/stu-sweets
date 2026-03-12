@@ -34,9 +34,17 @@ type OrdersState = {
   fetchOrders: () => Promise<void>;
   updateOrder: (id: number, data: Partial<Order>) => Promise<void>;
   deleteOrder: (id: number) => Promise<void>;
+
+  addItem: (orderId: number, item: { productId: number; quantity: number }) => Promise<void>;
+  updateItem: (
+    orderId: number,
+    itemId: number,
+    data: { quantity?: number }
+  ) => Promise<void>;
+  deleteItem: (orderId: number, itemId: number) => Promise<void>;
 };
 
-export const useOrdersStore = create<OrdersState>((set) => ({
+export const useOrdersStore = create<OrdersState>((set, get) => ({
   orders: [],
   loading: false,
   error: null,
@@ -55,14 +63,12 @@ export const useOrdersStore = create<OrdersState>((set) => ({
 
   updateOrder: async (id, data) => {
     try {
-      await toast.promise(
-        api.put(`internal/orders/${id}`, data),
-        {
-          loading: "Saving order...",
-          success: "Order updated!",
-          error: "Failed to update order",
-        }
-      );
+      await toast.promise(api.put(`internal/orders/${id}`, data), {
+        loading: "Saving order...",
+        success: "Order updated!",
+        error: "Failed to update order",
+      });
+
       set((state) => ({
         orders: state.orders.map((o) =>
           o.id === id ? { ...o, ...data } : o
@@ -84,6 +90,7 @@ export const useOrdersStore = create<OrdersState>((set) => ({
         success: "Order deleted!",
         error: "Failed to delete order",
       });
+
       set((state) => ({
         orders: state.orders.filter((o) => o.id !== id),
       }));
@@ -92,4 +99,62 @@ export const useOrdersStore = create<OrdersState>((set) => ({
       set({ error: "Failed to delete order" });
     }
   },
+
+  addItem: async (orderId, item) => {
+  try {
+    await toast.promise(
+      api.post(`internal/orders/${orderId}/items`, item),
+      {
+        loading: "Adding product...",
+        success: "Product added!",
+        error: "Failed to add product",
+      }
+    );
+
+    // обновляем заказы с сервера
+    await get().fetchOrders();
+
+  } catch (err) {
+    console.error(err);
+    set({ error: "Failed to add item" });
+  }
+},
+
+  updateItem: async (orderId, itemId, data) => {
+  try {
+    await toast.promise(
+      api.put(`internal/orders/${orderId}/items/${itemId}`, data),
+      {
+        loading: "Updating item...",
+        success: "Item updated!",
+        error: "Failed to update item",
+      }
+    );
+
+    await get().fetchOrders();
+
+  } catch (err) {
+    console.error(err);
+    set({ error: "Failed to update item" });
+  }
+},
+
+  deleteItem: async (orderId, itemId) => {
+  try {
+    await toast.promise(
+      api.delete(`internal/orders/${orderId}/items/${itemId}`),
+      {
+        loading: "Deleting item...",
+        success: "Item removed!",
+        error: "Failed to delete item",
+      }
+    );
+
+    await get().fetchOrders();
+
+  } catch (err) {
+    console.error(err);
+    set({ error: "Failed to delete item" });
+  }
+},
 }));

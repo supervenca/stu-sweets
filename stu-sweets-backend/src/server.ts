@@ -9,6 +9,7 @@ import productRoutes from "./routes/product.routes.js";
 import internalProductRoutes from "./routes/internalProduct.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import internalOrderRoutes from "./routes/internalOrder.routes.js";
+import internalInvoiceRoutes from "./routes/internalInvoice.routes.js";
 import categoriesPublicRoutes from "./routes/categories.routes.js";
 import categoriesInternalRoutes from "./routes/categories.internal.routes.js";
 import authRoutes from "./routes/auth.routes.js";
@@ -33,6 +34,7 @@ app.use("/internal/users", internalUserRoutes);
 app.use("/products", productRoutes);
 app.use("/internal/products", internalProductRoutes);
 app.use("/internal/orders", internalOrderRoutes);
+app.use("/internal/invoices", internalInvoiceRoutes);
 app.use("/categories", categoriesPublicRoutes);
 app.use("/internal/categories", categoriesInternalRoutes);
 
