@@ -8,6 +8,7 @@ import {
   deleteInvoice,
 } from "../services/invoice.service.js";
 import { CreateInvoiceDto, UpdateInvoiceDto } from "../types/invoices.js";
+import { generateInvoicePdf } from "../utils/invoicePdfGenerator.js";
 import { HttpError } from "../utils/httpError.js";
 
 export async function getAllInvoicesController(req: Request, res: Response) {
@@ -35,7 +36,13 @@ export async function getInvoiceByOrderController(req: Request, res: Response, n
       throw new HttpError(404, "Invoice not found");
     }
 
-    res.json(invoice);
+    const pdf = await generateInvoicePdf(invoice);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=invoice_${invoice.id}.pdf`
+    );
+    res.send(pdf);
   } catch (err) {
     next(err);
   }

@@ -84,8 +84,17 @@ function mapInvoice(invoice: any): Invoice {
     orderId: invoice.orderId,
     issuedAt: invoice.issuedAt.toISOString(),
     paid: invoice.paid,
-    total: Number(invoice.total), // Decimal → number
+    total: Number(invoice.total),
     pdfUrl: invoice.pdfUrl ?? undefined,
     note: invoice.note ?? undefined,
+
+    order: invoice.order
+      ? {
+          customerName: invoice.order.customerName,
+          customerEmail: invoice.order.customerEmail,
+          customerPhone: invoice.order.customerPhone,
+          items: invoice.order.items,
+        }
+      : undefined,
   };
 }
