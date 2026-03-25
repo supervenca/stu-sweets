@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useOrdersStore } from "../stores/orders.store";
 import { useProductsStore } from "../stores/products.store";
 import type { Order } from "../stores/orders.store";
-import { downloadInvoice } from "../stores/invoices.store";
+import { downloadInvoice, generateInvoice } from "../stores/invoices.store";
 import toast from "react-hot-toast";
 
 const OrdersPage = () => {
@@ -326,7 +326,17 @@ const OrdersPage = () => {
                   
                   {/* INVOICE */}
                   <td style={tableStyles.td}>
-                    <button onClick={() => downloadInvoice(o.id)}>Download PDF</button>
+                    <button
+                      onClick={() => generateInvoice(o.id)}
+                      disabled={o.invoiceExists} // можно дизейблить, если уже сгенерирован
+                    >{o.invoiceExists ? "Invoice Generated" : "Generate"}
+                    </button>
+
+                    <button
+                      onClick={() => downloadInvoice(o.id)}
+                      disabled={!o.invoiceExists}
+                    >{o.invoiceExists ? "Download PDF" : "No Invoice"}
+                    </button>
                   </td>
                 </tr>
               );

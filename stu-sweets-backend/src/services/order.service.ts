@@ -3,15 +3,21 @@ import { CreateOrderDto, UpdateOrderDto, OrderItemDto } from "../types/order.js"
 import { HttpError } from "../utils/httpError.js";
 
 export async function getAllOrders() {
-  return prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     include: {
       items: {
         include: {
           product: true,
         },
       },
+      invoices: true
     },
   });
+
+  return orders.map((order) => ({
+    ...order,
+    invoiceExists: !!order.invoices,
+  }));
 }
 
 export async function getOrderById(id: number) {

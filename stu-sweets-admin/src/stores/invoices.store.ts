@@ -1,5 +1,6 @@
 import api from "../api/httpClient";
 import toast from "react-hot-toast";
+import { useOrdersStore } from "./orders.store";
 
 export async function fetchInvoices() {
   try {
@@ -9,6 +10,28 @@ export async function fetchInvoices() {
     console.error(err);
     toast.error("Failed to fetch invoices");
     return [];
+  }
+}
+
+export async function generateInvoice(orderId: number) {
+  try {
+    await toast.promise(
+      api.post("/internal/invoices", { orderId }),
+      {
+        loading: "Generating invoice...",
+        success: "Invoice ready!",
+        error: "Failed to generate invoice",
+      });
+
+      useOrdersStore.setState((state) => ({
+      orders: state.orders.map((o) =>
+        o.id === orderId ? { ...o, invoiceExists: true } : o
+      ),
+    }));
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Error generating invoice");
   }
 }
 

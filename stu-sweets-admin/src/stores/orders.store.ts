@@ -24,6 +24,10 @@ export interface Order {
   total: number;
   createdAt: string;
   items: OrderItem[];
+  invoice?: {
+    id: number;
+  };
+  invoiceExists?: boolean;
 }
 
 type OrdersState = {
@@ -54,7 +58,13 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     try {
       const res = await api.get("internal/orders");
       console.log("Fetched orders:", res.data);
-      set({ orders: res.data, loading: false });
+      set({ 
+        orders: res.data.map((o: Order) => ({
+          ...o,
+          invoiceExists: !!o.invoice?.id
+        })), 
+        loading: false 
+      });
     } catch (err) {
       console.error(err);
       set({ error: "Failed to load orders", loading: false });

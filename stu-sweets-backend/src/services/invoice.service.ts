@@ -34,15 +34,21 @@ export async function getInvoiceByOrderId(orderId: number): Promise<Invoice | nu
 }
 
 export async function createInvoice(data: CreateInvoiceDto): Promise<Invoice> {
+  const existing = await prisma.invoice.findFirst({
+    where: { orderId: data.orderId },
+  });
+  if (existing) {
+    return mapInvoice(existing);
+  }
   const order = await prisma.order.findUnique({
     where: { id: data.orderId },
     include: { items: true },
   });
   if (!order) throw new HttpError(404, "Order not found");
-
-  // считаем total через Decimal
-  const total = order.items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
-
+  const total = order.items.reduce(
+    (sum, i) => sum + Number(i.price) * i.quantity,
+    0
+  );
   const invoice = await prisma.invoice.create({
     data: {
       orderId: data.orderId,
