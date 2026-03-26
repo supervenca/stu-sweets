@@ -5,7 +5,8 @@ import {
   getUserByIdController,
   updateUserController,
   deleteUserController,
-} from "../controllers/user.controller.js";
+} from "../controllers/internalUser.controller.js";
+
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { superAdminMiddleware } from "../middlewares/superAdminMiddleware.js";
 

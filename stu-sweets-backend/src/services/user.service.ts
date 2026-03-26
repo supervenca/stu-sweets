@@ -22,6 +22,7 @@ export async function getUserById(id: number) {
       id: true,
       email: true,
       name: true,
+      role: true,
       createdAt: true
       // password не возвращаем
     },
@@ -41,7 +42,11 @@ export async function createUser(data: CreateUserDto) {
 
 export async function updateUser(id: number, data: UpdateUserDto) {
   try {
-    const updateData: UpdateUserDto = { ...data };
+    const updateData: any = { ...data };
+
+    if (data.password) {
+      updateData.password = await bcrypt.hash(data.password, 10);
+    }
 
     return await prisma.user.update({
       where: { id },
