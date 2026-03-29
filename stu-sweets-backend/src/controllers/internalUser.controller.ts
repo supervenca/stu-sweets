@@ -29,7 +29,6 @@ export async function getUserByIdController(req: Request, res: Response) {
   if (!user) {
     throw new HttpError(404, "User not found");
   }
-
   res.json(sanitizeUser(user));
 }
 

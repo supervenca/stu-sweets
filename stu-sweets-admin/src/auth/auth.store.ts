@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import httpClient from "../api/httpClient";
+import api from "../api/httpClient";
 
 type User = {
   id: number;
@@ -20,7 +20,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   checkAuth: async () => {
     try {
-      const res = await httpClient.get("/auth/me");
+      const res = await api.get("/auth/me");
       set({ user: res.data, loading: false });
     } catch {
       localStorage.removeItem("token");

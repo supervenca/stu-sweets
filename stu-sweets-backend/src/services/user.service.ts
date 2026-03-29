@@ -9,6 +9,7 @@ export async function getAllUsers() {
       id: true,
       email: true,
       name: true,
+      role: true,
       createdAt: true
       // password не возвращаем
     },
@@ -31,7 +32,7 @@ export async function getUserById(id: number) {
 
 export async function createUser(data: CreateUserDto) {
   // Хешируем пароль
-  const hashedPassword = await bcrypt.hash(data.password, 10); // 10 — это соль
+  const hashedPassword = await bcrypt.hash(data.password, 10);
   return prisma.user.create({
     data: {
       ...data,

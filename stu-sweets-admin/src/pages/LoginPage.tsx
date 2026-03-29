@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import httpClient from "../api/httpClient";
+import api from "../api/httpClient";
 import axios from "axios";
 import { useAuthStore } from "../auth/auth.store";
 
@@ -22,7 +22,7 @@ const LoginPage = () => {
 
 try {
       // Сохраняем ответ сервера
-      const res = await httpClient.post("/auth/login", { email, password });
+      const res = await api.post("/auth/login", { email, password });
 
       // Сохраняем JWT в localStorage
       localStorage.setItem("token", res.data.token);
