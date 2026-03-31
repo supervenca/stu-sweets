@@ -17,13 +17,17 @@ const UsersPage = () => {
   const [role, setRole] = useState<"ADMIN" | "SUPER_ADMIN">("ADMIN");
   const isValidEmail = (email: string) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-};
+  };
+  const isValidPassword = (password: string) => {
+  return password.length >= 6;
+  };
 
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [editEmail, setEditEmail] = useState("");
   const [editPassword, setEditPassword] = useState("");
-  const [editRole, setEditRole] =
-    useState<"ADMIN" | "SUPER_ADMIN">("ADMIN");
+  const [editRole, setEditRole] = useState<"ADMIN" | "SUPER_ADMIN">("ADMIN");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -35,9 +39,13 @@ const UsersPage = () => {
     if (!email || !password) return;
 
     if (!isValidEmail(email)) {
-    alert("Invalid email");
-    return;
-  }
+      alert("Invalid email");
+      return;
+    }
+    if (!isValidPassword(password)) {
+      alert("Password must be at least 6 characters");
+      return;
+    }
 
     await createUser({ email, password, role });
 
@@ -59,8 +67,12 @@ const UsersPage = () => {
 
   const saveEdit = async (id: number) => {
     if (!isValidEmail(editEmail)) {
-    alert("Invalid email");
-    return;
+      alert("Invalid email");
+      return;
+    }
+    if (!isValidPassword(password)) {
+      alert("Password must be at least 6 characters");
+      return;
     }
     await updateUser(id, {
       email: editEmail,
@@ -87,11 +99,20 @@ const UsersPage = () => {
         />
 
         <input
-          type="password"
+          type={showPassword ? "text" : "password"}
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+
+        <label>
+          <input
+            type="checkbox"
+            checked={showPassword}
+            onChange={() => setShowPassword((prev) => !prev)}
+          />
+          Show password
+        </label>
 
         <select
           value={role}
@@ -141,12 +162,23 @@ const UsersPage = () => {
                 {/* PASSWORD */}
                 <td>
                   {isEditing ? (
-                    <input
-                      type="password"
-                      placeholder="New password"
-                      value={editPassword}
-                      onChange={(e) => setEditPassword(e.target.value)}
-                    />
+                    <div>
+                      <input
+                        type={showEditPassword ? "text" : "password"}
+                        placeholder="New password"
+                        value={editPassword}
+                        onChange={(e) => setEditPassword(e.target.value)}
+                      />
+
+                      <label style={{ marginLeft: 8 }}>
+                        <input
+                          type="checkbox"
+                          checked={showEditPassword}
+                          onChange={() => setShowEditPassword((prev) => !prev)}
+                        />
+                        Show
+                      </label>
+                    </div>
                   ) : (
                     "••••••"
                   )}
