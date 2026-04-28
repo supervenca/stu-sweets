@@ -79,6 +79,21 @@ model Order {
   createdAt     DateTime    @default(now())
   items         OrderItem[]
   invoices      Invoice[]   @relation("OrderToInvoice")
+  clientId      Int?
+  client        Client? @relation(fields: [clientId], references: [id])
+}
+
+//связь с Order
+model Client {
+  id            Int         @id @default(autoincrement())
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  blacklist     Boolean     @default(false)
+
+  orders        Order[]
+
+  @@index([customerEmail])
 }
 
 model Invoice {

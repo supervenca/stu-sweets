@@ -12,6 +12,7 @@ import internalOrderRoutes from "./routes/internalOrder.routes.js";
 import internalInvoiceRoutes from "./routes/internalInvoice.routes.js";
 import categoriesPublicRoutes from "./routes/categories.routes.js";
 import categoriesInternalRoutes from "./routes/categories.internal.routes.js";
+import clientsRoutes from "./routes/clients.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 
@@ -37,6 +38,7 @@ app.use("/internal/orders", internalOrderRoutes);
 app.use("/internal/invoices", internalInvoiceRoutes);
 app.use("/categories", categoriesPublicRoutes);
 app.use("/internal/categories", categoriesInternalRoutes);
+app.use("/internal/clients", clientsRoutes);
 
 app.use("/orders", orderRoutes);
 app.use("/auth", authRoutes);

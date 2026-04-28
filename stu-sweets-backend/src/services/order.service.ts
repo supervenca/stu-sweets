@@ -56,6 +56,38 @@ export async function createOrder(data: CreateOrderDto) {
     // Считаем total
     const total = itemsData.reduce((sum, i) => sum + (typeof i.price === 'number' ? i.price : i.price.toNumber()) * i.quantity, 0);
 
+    // ИЩЕМ КЛИЕНТА
+    let client = await tx.client.findFirst({
+      where: {
+        customerEmail: data.customerEmail,
+      },
+    });
+
+    // Проверка blacklist
+    if (client?.blacklist) {
+      throw new HttpError(403, "Client is blacklisted");
+    }
+
+    // ЕСЛИ КЛИЕНТА НЕТ — СОЗДАЁМ
+    if (!client) {
+      client = await tx.client.create({
+        data: {
+          customerName: data.customerName,
+          customerEmail: data.customerEmail,
+          customerPhone: data.customerPhone,
+        },
+      });
+    } else {
+      // (опционально) обновляем данные клиента
+      client = await tx.client.update({
+        where: { id: client.id },
+        data: {
+          customerName: data.customerName,
+          customerPhone: data.customerPhone,
+        },
+      });
+    }
+
     const order = await tx.order.create({
       data: {
         customerName: data.customerName,
@@ -63,6 +95,7 @@ export async function createOrder(data: CreateOrderDto) {
         customerPhone: data.customerPhone ?? null,
         comment: data.comment ?? null,
         total,
+        clientId: client.id, // связь с таблицей Client
         items: { create: itemsData },
       },
       include: { items: { include: { product: true } } },

@@ -18,6 +18,7 @@ const Sidebar = () => {
         <NavLink to="/orders" style={linkStyle}>Orders</NavLink>
         <NavLink to="/products" style={linkStyle}>Products</NavLink>
         <NavLink to="/categories" style={linkStyle}>Categories</NavLink>
+        <NavLink to="/clients" style={linkStyle}>Clients</NavLink>
       </nav>
     </aside>
   );
