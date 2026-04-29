@@ -1,6 +1,10 @@
-import { useEffect, useState, useRef } from "react";
-import { useCategoriesStore } from "../stores/categories.store";
+import { useEffect, useState } from "react";
+import { useCategoriesStore, type Category } from "../stores/categories.store";
+import { Table, Input, Button, Space, Popconfirm, Typography } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import toast from "react-hot-toast";
+
+const { Title, Text } = Typography;
 
 const CategoriesPage = () => {
   const {
@@ -17,30 +21,22 @@ const CategoriesPage = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
   const [pendingId, setPendingId] = useState<number | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const isAddDisabled = !name.trim();
   const isSaveDisabled = !editingName.trim();
 
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
-
-  useEffect(() => {
-    if (editingId !== null) inputRef.current?.focus();
-  }, [editingId]);
+  }, []);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
 
-    await toast.promise(
-      createCategory(name),
-      {
-        loading: "Creating...",
-        success: "Category created",
-        error: "Failed to create category",
-      }
-    );
+    await toast.promise(createCategory(name), {
+      loading: "Creating...",
+      success: "Category created",
+      error: "Failed to create category",
+    });
 
     setName("");
   };
@@ -48,145 +44,126 @@ const CategoriesPage = () => {
   const handleSave = async (id: number) => {
     if (!editingName.trim()) return;
 
-    const confirmed = await toast.promise(
-      new Promise<boolean>((resolve) => {
-        const ok = confirm(`Save changes to category "${editingName}"?`);
-        resolve(ok);
-      }),
-      {
-        loading: "Confirming...",
-        success: "",
-        error: "Cancelled",
-      }
-    );
-
-    if (!confirmed) return;
-
     setPendingId(id);
-    await toast.promise(
-      updateCategory(id, editingName),
-      {
-        loading: "Saving...",
-        success: "Category updated",
-        error: "Failed to update category",
-      }
-    );
+
+    await toast.promise(updateCategory(id, editingName), {
+      loading: "Saving...",
+      success: "Category updated",
+      error: "Failed to update category",
+    });
+
     setPendingId(null);
     setEditingId(null);
   };
 
   const handleDelete = async (id: number) => {
-  const confirmed = window.confirm("Are you sure you want to delete this category? This action cannot be undone.");
+    await toast.promise(deleteCategory(id), {
+      loading: "Deleting...",
+      success: "Category deleted",
+      error: "Failed to delete category",
+    });
+  };
 
-  if (!confirmed) return;
+  const columns: ColumnsType<Category> = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      width: 80,
+    },
+    {
+      title: "Name",
+      render: (_, record) =>
+        editingId === record.id ? (
+          <Input
+            value={editingName}
+            onChange={(e) => setEditingName(e.target.value)}
+            autoFocus
+          />
+        ) : (
+          record.name
+        ),
+    },
+    {
+      title: "Actions",
+      render: (_, record) =>
+        editingId === record.id ? (
+          <Space>
+            <Button
+              type="primary"
+              onClick={() => handleSave(record.id)}
+              loading={pendingId === record.id}
+              disabled={isSaveDisabled}
+            >
+              Save
+            </Button>
+            <Button
+              onClick={() => {
+                setEditingId(null);
+                setEditingName("");
+              }}
+            >
+              Cancel
+            </Button>
+          </Space>
+        ) : (
+          <Space>
+            <Button
+              onClick={() => {
+                setEditingId(record.id);
+                setEditingName(record.name);
+              }}
+            >
+              Edit
+            </Button>
 
-  try {
-    await deleteCategory(id);
-  } catch (error) {
-    alert("Error occurred while deleting category");
-    console.error(error);
-  }
-};
+            <Popconfirm
+              title="Delete category?"
+              description="This action cannot be undone"
+              onConfirm={() => handleDelete(record.id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button danger>Delete</Button>
+            </Popconfirm>
+          </Space>
+        ),
+    },
+  ];
 
-  if (loading) return <div>Loading categories...</div>;
-  if (error) return <div style={{ color: "red" }}>{error}</div>;
+  if (error) return <Text type="danger">{error}</Text>;
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h1>
-          Categories <span style={{ color: "#6b7280" }}>({categories.length})</span>
-        </h1>
-      </div>
+    <div style={{ padding: 20 }}>
+      <Title level={3}>
+        Categories <Text type="secondary">({categories.length})</Text>
+      </Title>
 
-      {/* Create */}
-      <div style={{ marginBottom: 24 }}>
-        <input
+      {/* CREATE */}
+      <Space style={{ marginBottom: 16 }}>
+        <Input
+          placeholder="Category name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Category name"
         />
-        <button
+        <Button
+          type="primary"
           onClick={handleCreate}
-          style={{ marginLeft: 8 }}
           disabled={isAddDisabled}
         >
           Add
-        </button>
-      </div>
+        </Button>
+      </Space>
 
-      {/* Table */}
-      {categories.length === 0 ? (
-        <p>No categories yet</p>
-      ) : (
-        <table style={tableStyles.table}>
-          <thead>
-            <tr>
-              <th style={tableStyles.th}>ID</th>
-              <th style={tableStyles.th}>Name</th>
-              <th style={tableStyles.th}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {categories.map((cat) => (
-              <tr key={cat.id}>
-                <td style={tableStyles.td}>{cat.id}</td>
-                <td style={tableStyles.td}>
-                  {editingId === cat.id ? (
-                    <input
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      ref={inputRef}
-                    />
-                  ) : (
-                    cat.name
-                  )}
-                </td>
-                <td style={tableStyles.td}>
-                  {editingId === cat.id ? (
-                    <>
-                      <button
-                        onClick={() => handleSave(cat.id)}
-                        disabled={isSaveDisabled || pendingId === cat.id}
-                      >
-                        {pendingId === cat.id ? "Saving..." : "Save"}
-                      </button>{" "}
-                      <button
-                        onClick={() => {
-                          setEditingId(null);
-                          setEditingName("");
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => {
-                          setEditingId(cat.id);
-                          setEditingName(cat.name);
-                        }}
-                      >
-                        Edit
-                      </button>{" "}
-                      <button onClick={() => handleDelete(cat.id)}>Delete</button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      {/* TABLE */}
+      <Table
+        rowKey="id"
+        dataSource={categories}
+        columns={columns}
+        loading={loading}
+        pagination={{ pageSize: 10 }}
+      />
     </div>
   );
 };
 
 export default CategoriesPage;
-
-const tableStyles: Record<string, React.CSSProperties> = {
-  table: { width: "100%", borderCollapse: "collapse", background: "#fff" },
-  th: { textAlign: "left", padding: "12px", borderBottom: "2px solid #e5e7eb" },
-  td: { padding: "12px", borderBottom: "1px solid #e5e7eb" },
-};

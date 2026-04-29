@@ -1,8 +1,34 @@
 import { useEffect, useState } from "react";
+import {
+  Table,
+  Input,
+  Button,
+  Space,
+  Select,
+  Popconfirm,
+  Typography,
+  InputNumber,
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
+
 import { useProductsStore } from "../stores/products.store";
 import { useCategoriesStore } from "../stores/categories.store";
 import toast from "react-hot-toast";
 
+const { Title, Text } = Typography;
+const { TextArea } = Input;
+
+type Product = {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  categoryId: number | null;
+  category?: {
+    id: number;
+    name: string;
+  };
+};
 
 const ProductsPage = () => {
   const {
@@ -12,496 +38,275 @@ const ProductsPage = () => {
     fetchProducts,
     createProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
   } = useProductsStore();
 
   const { categories, fetchCategories } = useCategoriesStore();
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
+  const [price, setPrice] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [pendingId, setPendingId] = useState<number | null>(null);
-
-
-  const [errors, setErrors] = useState<{
-  name?: string;
-  price?: string;
-  description?: string;
-}>({});
 
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editingData, setEditingData] = useState<{
-    name: string;
-    price: string;
-    categoryId: number | null;
-    description: string;
-  }>({
+  const [editingData, setEditingData] = useState({
     name: "",
-    price: "",
-    categoryId: null,
+    price: 0,
     description: "",
+    categoryId: null as number | null,
   });
 
-  const [editErrors, setEditErrors] = useState<{
-    name?: string;
-    price?: string;
-    description?: string;
-  }>({});
+  const [pendingId, setPendingId] = useState<number | null>(null);
 
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, [fetchProducts, fetchCategories]);
 
+  // CREATE
   const handleCreate = async () => {
-  const newErrors: typeof errors = {};
+    if (!name.trim() || !price || price <= 0) return;
 
-  if (!name.trim()) newErrors.name = "Name is required";
-  else if (/\d/.test(name)) newErrors.name = "Name must not contain numbers";
-
-  if (!price) newErrors.price = "Price is required";
-  else if (Number(price) <= 0) newErrors.price = "Price must be greater than 0";
-
-  setErrors(newErrors);
-  if (Object.keys(newErrors).length > 0) return;
-
-  try {
     await toast.promise(
       createProduct({
         name: name.trim(),
-        price: Number(price),
-        categoryId: categoryId,
-        description: description.trim()
+        price,
+        categoryId,
+        description: description.trim(),
       }),
       {
         loading: "Adding product...",
-        success: "Product added successfully!",
+        success: "Product added!",
         error: "Failed to add product",
       }
     );
 
     setName("");
     setDescription("");
-    setPrice("");
+    setPrice(null);
     setCategoryId(null);
-    setErrors({});
-  } catch {console.error(error)}
-};
+  };
 
-const validateEdit = () => {
-  const errors: typeof editErrors = {};
+  // SAVE
+  const handleSave = async (id: number) => {
+    setPendingId(id);
 
-  if (!editingData.name.trim()) {
-    errors.name = "Name is required";
-  } else if (/\d/.test(editingData.name)) {
-    errors.name = "Name must not contain numbers";
-  }
-
-  if (!editingData.price) {
-    errors.price = "Price is required";
-  } else if (Number(editingData.price) <= 0) {
-    errors.price = "Price must be greater than 0";
-  }
-
-  setEditErrors(errors);
-
-  return Object.keys(errors).length === 0;
-};
-
-const handleSave = async (id: number) => {
-  if (!validateEdit()) return;
-
-  const confirmed = await toast.promise(
-    new Promise<boolean>((resolve) => {
-      const ok = confirm("Are you sure you want to save these changes?");
-      resolve(ok);
-    }),
-    {
-      loading: "Confirming...",
-      success: "",
-      error: "Cancelled",
-    }
-  );
-
-  if (!confirmed) return;
-
-  setPendingId(id);
-
-  try {
     await toast.promise(
       updateProduct(id, {
+        ...editingData,
         name: editingData.name.trim(),
-        price: Number(editingData.price),
         description: editingData.description.trim(),
-        categoryId: editingData.categoryId,
+        price: Number(editingData.price)
       }),
       {
-        loading: "Saving changes...",
-        success: "Product updated!",
-        error: "Failed to update product",
+        loading: "Saving...",
+        success: "Updated!",
+        error: "Failed",
       }
     );
+
     setEditingId(null);
-  } catch {console.error(error)}
-  setPendingId(null);
-};
+    setPendingId(null);
+  };
 
-const handleDelete = async (id: number) => {
-  const confirmed = confirm("Are you sure you want to delete this product?");
-  if (!confirmed) return;
-
-  setPendingId(id);
-
-  try {
+  // DELETE
+  const handleDelete = async (id: number) => {
     await toast.promise(deleteProduct(id), {
-      loading: "Deleting product...",
-      success: "Product deleted!",
-      error: "Failed to delete product",
+      loading: "Deleting...",
+      success: "Deleted",
+      error: "Failed",
     });
-  } catch {console.error(error)}
-  setPendingId(null);
-};
+  };
 
-  useEffect(() => {
-  fetchProducts();
-  fetchCategories().then(() => {
-  });
-}, [fetchProducts, fetchCategories]);
+  // TABLE
+  const columns: ColumnsType<Product> = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      width: 70,
+    },
+    {
+      title: "Name",
+      render: (_, record) =>
+        editingId === record.id ? (
+          <Input
+            value={editingData.name}
+            onChange={(e) =>
+              setEditingData((prev) => ({
+                ...prev,
+                name: e.target.value,
+              }))
+            }
+          />
+        ) : (
+          record.name
+        ),
+    },
+    {
+      title: "Description",
+      render: (_, record) =>
+        editingId === record.id ? (
+          <TextArea
+            value={editingData.description}
+            rows={2}
+            maxLength={500}
+            onChange={(e) =>
+              setEditingData((prev) => ({
+                ...prev,
+                description: e.target.value,
+              }))
+            }
+          />
+        ) : (
+          record.description
+        ),
+    },
+    {
+      title: "Price (€)",
+      render: (_, record) =>
+        editingId === record.id ? (
+          <InputNumber
+            value={editingData.price}
+            min={0}
+            onChange={(value) =>
+              setEditingData((prev) => ({
+                ...prev,
+                price: typeof value === "number" ? value : 0,
+              }))
+            }
+          />
+        ) : (
+          record.price
+        ),
+    },
+    {
+      title: "Category",
+      render: (_, record) =>
+        editingId === record.id ? (
+          <Select
+            value={editingData.categoryId ?? undefined}
+            style={{ width: 150 }}
+            onChange={(value) =>
+              setEditingData((prev) => ({
+                ...prev,
+                categoryId: value ?? null,
+              }))
+            }
+            allowClear
+          >
+            {categories.map((cat) => (
+              <Select.Option key={cat.id} value={cat.id}>
+                {cat.name}
+              </Select.Option>
+            ))}
+          </Select>
+        ) : (
+          record.category?.name ?? "—"
+        ),
+    },
+    {
+      title: "Actions",
+      render: (_, record) =>
+        editingId === record.id ? (
+          <Space>
+            <Button
+              type="primary"
+              loading={pendingId === record.id}
+              onClick={() => handleSave(record.id)}
+            >
+              Save
+            </Button>
+            <Button onClick={() => setEditingId(null)}>Cancel</Button>
+          </Space>
+        ) : (
+          <Space>
+            <Button
+              onClick={() => {
+                setEditingId(record.id);
+                setEditingData({
+                  name: record.name,
+                  price: record.price,
+                  description: record.description,
+                  categoryId: record.categoryId,
+                });
+              }}
+            >
+              Edit
+            </Button>
 
-  if (loading) return <p>Loading products...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+            <Popconfirm
+              title="Delete product?"
+              onConfirm={() => handleDelete(record.id)}
+            >
+              <Button danger loading={pendingId === record.id}>
+                Delete
+              </Button>
+            </Popconfirm>
+          </Space>
+        ),
+    },
+  ];
+
+  if (error) return <Text type="danger">{error}</Text>;
 
   return (
-    <div>
-      <h1>
-        Products{" "}
-        <span style={{ color: "#6b7280" }}>
-          ({products.length})
-        </span>
-      </h1>
+    <div style={{ padding: 20 }}>
+      <Title level={3}>
+        Products <Text type="secondary">({products.length})</Text>
+      </Title>
 
-      <div style={{ marginBottom: 24 }}>
-  <input
-  placeholder="Product name"
-  value={name}
-  maxLength={100}
-  onChange={(e) => {
-    setName(e.target.value);
-    setErrors((prev) => ({ ...prev, name: undefined }));
-  }}
-  style={{
-    marginRight: 8,
-    borderColor: errors.name ? "red" : undefined,
-  }}
-  />
-{errors.name && (
-  <div style={{ color: "red", fontSize: 12 }}>{errors.name}</div>
-)}
+      {/* CREATE */}
+      <Space style={{ marginBottom: 16 }}>
+        <Input
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
 
-  <input
-  type="number"
-  placeholder="Price"
-  value={price}
-  onChange={(e) => {
-    setPrice(e.target.value);
-    setErrors((prev) => ({ ...prev, price: undefined }));
-  }}
-  style={{
-    marginRight: 8,
-    width: 120,
-    borderColor: errors.price ? "red" : undefined,
-  }}
-/>
-{errors.price && (
-  <div style={{ color: "red", fontSize: 12 }}>{errors.price}</div>
-)}
+        <InputNumber
+          placeholder="Price (€)"
+          value={price ?? undefined}
+          onChange={(v) => setPrice(v ?? null)}
+        />
 
-  <select
-  value={categoryId ?? ""} 
-  onChange={(e) =>
-    setCategoryId(
-      e.target.value === "" ? null : Number(e.target.value)
-    )
-  }
-  style={{ marginRight: 8 }}
->
-  <option value="">No category</option>
-  {categories.map((cat) => (
-    <option key={cat.id} value={cat.id}>
-      {cat.name}
-    </option>
-  ))}
-</select>
-<div style={{ position: "relative", display: "inline-block" }}>
-  <textarea
-    placeholder="Description"
-    value={description}
-    maxLength={500}
-    onChange={(e) => {
-      setDescription(e.target.value);
-      setErrors((prev) => ({ ...prev, description: undefined }));
-    }}
-    rows={3}
-    style={{
-      marginRight: 8,
-      minWidth: 250,
-      paddingBottom: 20,
-      resize: "vertical",
-      borderColor: errors.description ? "red" : undefined,
-    }}
-  />
+        <Input.TextArea
+          placeholder="Description"
+          value={description}
+          maxLength={500}
+          rows={2}
+          onChange={(e) => setDescription(e.target.value)}
+          style={{ width: 250 }}
+          showCount
+        />
 
-  <span
-    style={{
-      position: "absolute",
-      bottom: 4,
-      right: 10,
-      fontSize: 11,
-      color: "#6b7280",
-      pointerEvents: "none",
-    }}
-  >
-    {description.length}/500
-  </span>
-</div>
-{errors.description && (
-  <div style={{ color: "red", fontSize: 12 }}>
-    {errors.description}
-  </div>
-)}
+        <Select
+          placeholder="Category"
+          value={categoryId ?? undefined}
+          onChange={(v) => setCategoryId(v ?? null)}
+          allowClear
+          style={{ width: 180 }}
+        >
+          {categories.map((c) => (
+            <Select.Option key={c.id} value={c.id}>
+              {c.name}
+            </Select.Option>
+          ))}
+        </Select>
 
-  <button onClick={handleCreate}>Add product</button>
-</div>
+        <Button type="primary" onClick={handleCreate}>
+          Add
+        </Button>
+      </Space>
 
-      {products.length === 0 ? (
-        <p>No products yet</p>
-      ) : (
-        <table style={tableStyles.table}>
-          <thead>
-            <tr>
-              <th style={tableStyles.th}>ID</th>
-              <th style={tableStyles.th}>NAME</th>
-              <th style={tableStyles.th}>DESCRIPTION</th>
-              <th style={tableStyles.th}>PRICE</th>
-              <th style={tableStyles.th}>CATEGORY</th>
-              <th style={tableStyles.th}>ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-  {products.map((p) => {
-    const isEditing = editingId === p.id;
-
-    const isUnchanged =
-      p.name === editingData.name &&
-      p.price === Number(editingData.price) &&
-      (p.categoryId ?? "") === editingData.categoryId;
-
-    return (
-      <tr key={p.id}>
-        <td style={tableStyles.td}>{p.id}</td>
-
-        {/* NAME */}
-        <td style={tableStyles.td}>
-          {isEditing ? (
-            <>
-              <input
-                value={editingData.name}
-                onChange={(e) => {
-                  setEditingData((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }));
-                  setEditErrors((prev) => ({
-                    ...prev,
-                    name: undefined,
-                  }));
-                }}
-                style={{
-                  borderColor: editErrors.name ? "red" : undefined,
-                }}
-              />
-              {editErrors.name && (
-                <div style={{ color: "red", fontSize: 12 }}>
-                  {editErrors.name}
-                </div>
-              )}
-            </>
-          ) : (
-            p.name
-          )}
-        </td>
-        {/* DESCRIPTION */}
-        <td style={tableStyles.td}>
-          {isEditing ? (
-            <>
-              <div style={{ position: "relative", display: "inline-block" }}>
-                  <textarea
-                    value={editingData.description}
-                    maxLength={500}
-                    rows={3}
-                    onChange={(e) => {
-                      setEditingData((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }));
-                      setEditErrors((prev) => ({
-                        ...prev,
-                        description: undefined,
-                      }));
-                    }}
-                    style={{
-                      minWidth: 250,
-                      paddingBottom: 20,
-                      resize: "vertical",
-                      borderColor: editErrors.description ? "red" : undefined,
-                    }}
-                  />
-                  <span
-                    style={{
-                      position: "absolute",
-                      bottom: 4,
-                      right: 10,
-                      fontSize: 11,
-                      color: "#6b7280",
-                      pointerEvents: "none",
-                    }}
-                  >
-                    {editingData.description.length}/500
-                  </span>
-              </div>
-              {editErrors.description && (
-                <div style={{ color: "red", fontSize: 12 }}>
-                  {editErrors.description}
-                </div>
-              )}
-            </>
-          ) : (
-            p.description
-          )}
-        </td>
-        {/* PRICE */}
-        <td style={tableStyles.td}>
-          {isEditing ? (
-            <>
-              <input
-                type="number"
-                value={editingData.price}
-                onChange={(e) => {
-                  setEditingData((prev) => ({
-                    ...prev,
-                    price: e.target.value,
-                  }));
-                  setEditErrors((prev) => ({
-                    ...prev,
-                    price: undefined,
-                  }));
-                }}
-                style={{
-                  width: 100,
-                  borderColor: editErrors.price ? "red" : undefined,
-                }}
-              />
-              {editErrors.price && (
-                <div style={{ color: "red", fontSize: 12 }}>
-                  {editErrors.price}
-                </div>
-              )}
-            </>
-          ) : (
-            p.price
-          )}
-        </td>
-
-        {/* CATEGORY */}
-        <td style={tableStyles.td}>
-          {isEditing ? (
-            <select
-  value={editingData.categoryId ?? ""} 
-  onChange={(e) =>
-    setEditingData((prev) => ({
-      ...prev,
-      categoryId: e.target.value === "" ? null : Number(e.target.value),
-    }))
-  }
->
-  <option value="">No category</option>
-  {categories.map((cat) => (
-    <option key={cat.id} value={cat.id}>
-      {cat.name}
-    </option>
-  ))}
-</select>
-          ) : (
-            p.category?.name ?? "—"
-          )}
-        </td>
-
-        {/* ACTIONS */}
-        <td style={tableStyles.td}>
-          {isEditing ? (
-            <>
-              <button
-                onClick={() => handleSave(p.id)}
-                disabled={
-                  pendingId === p.id || isUnchanged
-                }
-              >
-                {pendingId === p.id ? "Saving..." : "Save"}
-              </button>{" "}
-              <button
-                onClick={() => {
-                  setEditingId(null);
-                  setEditErrors({});
-                }}
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => {
-                  setEditingId(p.id);
-                  setEditingData({
-                    name: p.name,
-                    price: String(p.price),
-                    description: p.description,
-                    categoryId: p.categoryId ?? null,
-                  });
-                  setEditErrors({});
-                }}>Edit</button>{" "}
-              <button
-                onClick={() => handleDelete(p.id)}
-                disabled={pendingId === p.id}
-              >
-                {pendingId === p.id
-                  ? "Deleting..."
-                  : "Delete"}
-              </button>
-            </>
-          )}
-        </td>
-      </tr>
-    );
-  })}
-</tbody>
-        </table>
-      )}
+      <Table
+        rowKey="id"
+        dataSource={products}
+        columns={columns}
+        loading={loading}
+        pagination={{ pageSize: 10 }}
+      />
     </div>
   );
 };
 
 export default ProductsPage;
-
-const tableStyles: Record<string, React.CSSProperties> = {
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    background: "#fff",
-  },
-  th: {
-    textAlign: "left",
-    padding: "12px",
-    borderBottom: "2px solid #e5e7eb",
-  },
-  td: {
-    padding: "12px",
-    borderBottom: "1px solid #e5e7eb",
-  },
-};
