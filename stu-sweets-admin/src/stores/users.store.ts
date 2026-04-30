@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import api from "../api/httpClient";
-import { toast } from "react-hot-toast";
+import type { AxiosError } from "axios";
 
 export interface User {
   id: number;
@@ -11,7 +11,6 @@ export interface User {
 interface UsersState {
   users: User[];
   loading: boolean;
-  error: string | null;
 
   fetchUsers: () => Promise<void>;
   createUser: (data: {
@@ -33,52 +32,53 @@ interface UsersState {
 export const useUsersStore = create<UsersState>((set) => ({
   users: [],
   loading: false,
-  error: null,
 
   fetchUsers: async () => {
-    set({ loading: true, error: null });
+    set({ loading: true });
     try {
       const res = await api.get("/internal/users");
       set({ users: res.data, loading: false });
-    } catch (err) {
-      console.error(err);
-      set({ error: "Failed to load users", loading: false });
-      toast.error("Failed to load users");
+    } catch {
+      set({ loading: false });
+      throw new Error("Failed to load users");
     }
   },
 
   createUser: async (data) => {
     try {
       await api.post("/internal/users", data);
-      toast.success("User created");
-      await useUsersStore.getState().fetchUsers(); // рефетч
+      await useUsersStore.getState().fetchUsers();
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to create user");
+      const error = err as AxiosError<{ message: string }>;
+      throw new Error(
+        error?.response?.data?.message || "Failed to create user"
+      );
     }
   },
 
   updateUser: async (id, data) => {
     try {
       await api.put(`/internal/users/${id}`, data);
-      toast.success("User updated");
       await useUsersStore.getState().fetchUsers();
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to update user");
+      const error = err as AxiosError<{ message: string }>;
+      throw new Error(
+        error?.response?.data?.message || "Failed to update user"
+      );
     }
   },
 
   deleteUser: async (id) => {
     try {
       await api.delete(`/internal/users/${id}`);
-      toast.success("User deleted");
       set((state) => ({
         users: state.users.filter((u) => u.id !== id),
       }));
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete user");
+      const error = err as AxiosError<{ message: string }>;
+      throw new Error(
+        error?.response?.data?.message || "Failed to delete user"
+      );
     }
   },
 }));

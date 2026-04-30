@@ -1,3 +1,5 @@
+// NOT IN USE FOR NOW (COULD BE ADDED BACK LATER)
+
 import api from "../api/httpClient";
 import toast from "react-hot-toast";
 import { useOrdersStore } from "./orders.store";

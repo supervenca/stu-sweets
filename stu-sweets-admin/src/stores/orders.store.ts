@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import api from "../api/httpClient";
-import toast from "react-hot-toast";
 
 export interface OrderItem {
   id: number;
@@ -24,10 +23,6 @@ export interface Order {
   total: number;
   createdAt: string;
   items: OrderItem[];
-  invoice?: {
-    id: number;
-  };
-  invoiceExists?: boolean;
 }
 
 type OrdersState = {
@@ -39,12 +34,17 @@ type OrdersState = {
   updateOrder: (id: number, data: Partial<Order>) => Promise<void>;
   deleteOrder: (id: number) => Promise<void>;
 
-  addItem: (orderId: number, item: { productId: number; quantity: number }) => Promise<void>;
+  addItem: (
+    orderId: number,
+    item: { productId: number; quantity: number }
+  ) => Promise<void>;
+
   updateItem: (
     orderId: number,
     itemId: number,
     data: { quantity?: number }
   ) => Promise<void>;
+
   deleteItem: (orderId: number, itemId: number) => Promise<void>;
 };
 
@@ -55,29 +55,32 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
 
   fetchOrders: async () => {
     set({ loading: true, error: null });
+
     try {
-      const res = await api.get("internal/orders");
-      console.log("Fetched orders:", res.data);
-      set({ 
-        orders: res.data.map((o: Order) => ({
+      const res = await api.get("/internal/orders");
+
+      const sorted = res.data
+        .map((o: Order) => ({
           ...o,
-          invoiceExists: !!o.invoice?.id
-        })), 
-        loading: false 
+        }))
+        .sort((a: Order, b: Order) => a.id - b.id);
+
+      set({
+        orders: sorted,
+        loading: false,
       });
     } catch (err) {
       console.error(err);
-      set({ error: "Failed to load orders", loading: false });
+      set({
+        error: "Failed to load orders",
+        loading: false,
+      });
     }
   },
 
   updateOrder: async (id, data) => {
     try {
-      await toast.promise(api.put(`internal/orders/${id}`, data), {
-        loading: "Saving order...",
-        success: "Order updated!",
-        error: "Failed to update order",
-      });
+      await api.put(`/internal/orders/${id}`, data);
 
       set((state) => ({
         orders: state.orders.map((o) =>
@@ -91,15 +94,8 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   },
 
   deleteOrder: async (id) => {
-    const confirmed = confirm("Are you sure you want to delete this order?");
-    if (!confirmed) return;
-
     try {
-      await toast.promise(api.delete(`internal/orders/${id}`), {
-        loading: "Deleting order...",
-        success: "Order deleted!",
-        error: "Failed to delete order",
-      });
+      await api.delete(`/internal/orders/${id}`);
 
       set((state) => ({
         orders: state.orders.filter((o) => o.id !== id),
@@ -111,60 +107,40 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   },
 
   addItem: async (orderId, item) => {
-  try {
-    await toast.promise(
-      api.post(`internal/orders/${orderId}/items`, item),
-      {
-        loading: "Adding product...",
-        success: "Product added!",
-        error: "Failed to add product",
-      }
-    );
+    try {
+      await api.post(`/internal/orders/${orderId}/items`, item);
 
-    // обновляем заказы с сервера
-    await get().fetchOrders();
-
-  } catch (err) {
-    console.error(err);
-    set({ error: "Failed to add item" });
-  }
-},
+      await get().fetchOrders();
+    } catch (err) {
+      console.error(err);
+      set({ error: "Failed to add item" });
+    }
+  },
 
   updateItem: async (orderId, itemId, data) => {
-  try {
-    await toast.promise(
-      api.put(`internal/orders/${orderId}/items/${itemId}`, data),
-      {
-        loading: "Updating item...",
-        success: "Item updated!",
-        error: "Failed to update item",
-      }
-    );
+    try {
+      await api.put(
+        `/internal/orders/${orderId}/items/${itemId}`,
+        data
+      );
 
-    await get().fetchOrders();
-
-  } catch (err) {
-    console.error(err);
-    set({ error: "Failed to update item" });
-  }
-},
+      await get().fetchOrders();
+    } catch (err) {
+      console.error(err);
+      set({ error: "Failed to update item" });
+    }
+  },
 
   deleteItem: async (orderId, itemId) => {
-  try {
-    await toast.promise(
-      api.delete(`internal/orders/${orderId}/items/${itemId}`),
-      {
-        loading: "Deleting item...",
-        success: "Item removed!",
-        error: "Failed to delete item",
-      }
-    );
+    try {
+      await api.delete(
+        `/internal/orders/${orderId}/items/${itemId}`
+      );
 
-    await get().fetchOrders();
-
-  } catch (err) {
-    console.error(err);
-    set({ error: "Failed to delete item" });
-  }
-},
+      await get().fetchOrders();
+    } catch (err) {
+      console.error(err);
+      set({ error: "Failed to delete item" });
+    }
+  },
 }));

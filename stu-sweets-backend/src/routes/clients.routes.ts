@@ -5,7 +5,7 @@ import { superAdminMiddleware } from "../middlewares/superAdminMiddleware.js";
 
 const router = Router();
 
-router.use(authMiddleware, superAdminMiddleware);
+router.use(authMiddleware);
 
 router.get("/", controller.getClients);
 router.patch("/:id/blacklist", controller.toggleBlacklist);

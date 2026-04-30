@@ -1,6 +1,22 @@
 import { useEffect, useState } from "react";
-import { useUsersStore } from "../stores/users.store";
+import {
+  Table,
+  Input,
+  Button,
+  Space,
+  Select,
+  Popconfirm,
+  Typography,
+  message,
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
 
+import { useUsersStore } from "../stores/users.store";
+import type { User } from "../stores/users.store";
+
+const { Title } = Typography;
+
+type Role = "ADMIN" | "SUPER_ADMIN";
 
 const UsersPage = () => {
   const {
@@ -14,222 +30,222 @@ const UsersPage = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"ADMIN" | "SUPER_ADMIN">("ADMIN");
-  const isValidEmail = (email: string) => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-  const isValidPassword = (password: string) => {
-  return password.length >= 6;
-  };
+  const [role, setRole] = useState<Role>("ADMIN");
 
-  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [editEmail, setEditEmail] = useState("");
   const [editPassword, setEditPassword] = useState("");
-  const [editRole, setEditRole] = useState<"ADMIN" | "SUPER_ADMIN">("ADMIN");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showEditPassword, setShowEditPassword] = useState(false);
+  const [editRole, setEditRole] = useState<Role>("ADMIN");
+
+  const [pendingId, setPendingId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers().catch((e) => message.error(e.message));
   }, [fetchUsers]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // validation
+  const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-    if (!email || !password) return;
+  const isValidPassword = (password: string) =>
+    password.length >= 6;
 
+  // CREATE
+  const handleCreate = async () => {
     if (!isValidEmail(email)) {
-      alert("Invalid email");
+      message.error("Invalid email");
       return;
     }
+
     if (!isValidPassword(password)) {
-      alert("Password must be at least 6 characters");
+      message.error("Password must be at least 6 characters");
       return;
     }
 
-    await createUser({ email, password, role });
+    try {
+      await createUser({ email, password, role });
 
-    setEmail("");
-    setPassword("");
-    setRole("ADMIN");
+      message.success("User created");
+
+      setEmail("");
+      setPassword("");
+      setRole("ADMIN");
+    } catch (e) {
+      const err = e as Error;
+      message.error(err.message);
+    }
   };
 
-  const startEdit = (user: { id: number; email: string; role: "ADMIN" | "SUPER_ADMIN" }) => {
-    setEditingUserId(user.id);
-    setEditEmail(user.email);
-    setEditRole(user.role);
-    setEditPassword("");
-  };
-
-  const cancelEdit = () => {
-    setEditingUserId(null);
-  };
-
-  const saveEdit = async (id: number) => {
+  // SAVE
+  const handleSave = async (id: number) => {
     if (!isValidEmail(editEmail)) {
-      alert("Invalid email");
+      message.error("Invalid email");
       return;
     }
-    if (!isValidPassword(password)) {
-      alert("Password must be at least 6 characters");
-      return;
-    }
-    await updateUser(id, {
-      email: editEmail,
-      role: editRole,
-      ...(editPassword && { password: editPassword }),
-    });
 
-    setEditingUserId(null);
+    if (editPassword && !isValidPassword(editPassword)) {
+      message.error("Password must be at least 6 characters");
+      return;
+    }
+
+    setPendingId(id);
+
+    try {
+      await updateUser(id, {
+        email: editEmail,
+        role: editRole,
+        ...(editPassword ? { password: editPassword } : {}),
+      });
+
+      message.success("User updated");
+      setEditingId(null);
+    } catch (e) {
+      const err = e as Error;
+      message.error(err.message);
+    }
+
+    setPendingId(null);
   };
 
-  if (loading) return <p>Loading...</p>;
+  const columns: ColumnsType<User> = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      width: 70,
+    },
+    {
+      title: "Email",
+      render: (_, record) =>
+        editingId === record.id ? (
+          <Input
+            value={editEmail}
+            onChange={(e) => setEditEmail(e.target.value)}
+          />
+        ) : (
+          record.email
+        ),
+    },
+    {
+      title: "Password",
+      render: (_, record) =>
+        editingId === record.id ? (
+          <Input.Password
+            placeholder="New password"
+            value={editPassword}
+            onChange={(e) => setEditPassword(e.target.value)}
+          />
+        ) : (
+          "••••••"
+        ),
+    },
+    {
+      title: "Role",
+      render: (_, record) =>
+        editingId === record.id ? (
+          <Select
+            value={editRole}
+            onChange={(v) => setEditRole(v)}
+            style={{ width: 150 }}
+          >
+            <Select.Option value="ADMIN">ADMIN</Select.Option>
+            <Select.Option value="SUPER_ADMIN">
+              SUPER_ADMIN
+            </Select.Option>
+          </Select>
+        ) : (
+          record.role
+        ),
+    },
+    {
+      title: "Actions",
+      render: (_, record) =>
+        editingId === record.id ? (
+          <Space>
+            <Button
+              type="primary"
+              loading={pendingId === record.id}
+              onClick={() => handleSave(record.id)}
+            >
+              Save
+            </Button>
+            <Button onClick={() => setEditingId(null)}>
+              Cancel
+            </Button>
+          </Space>
+        ) : (
+          <Space>
+            <Button
+              onClick={() => {
+                setEditingId(record.id);
+                setEditEmail(record.email);
+                setEditRole(record.role);
+                setEditPassword("");
+              }}
+            >
+              Edit
+            </Button>
+
+            <Popconfirm
+              title="Delete user?"
+              onConfirm={async () => {
+                try {
+                  await deleteUser(record.id);
+                  message.success("User deleted");
+                } catch (e) {
+                  const err = e as Error;
+                  message.error(err.message);
+                }
+              }}
+            >
+              <Button danger>Delete</Button>
+            </Popconfirm>
+          </Space>
+        ),
+    },
+  ];
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>Users</h1>
+      <Title level={3}>Users</Title>
 
       {/* CREATE */}
-      <form onSubmit={handleCreate} style={{ marginBottom: 20 }}>
-        <input
-          type="email"
+      <Space style={{ marginBottom: 16 }}>
+        <Input
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <input
-          type={showPassword ? "text" : "password"}
+        <Input.Password
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <label>
-          <input
-            type="checkbox"
-            checked={showPassword}
-            onChange={() => setShowPassword((prev) => !prev)}
-          />
-          Show password
-        </label>
-
-        <select
+        <Select
           value={role}
-          onChange={(e) =>
-            setRole(e.target.value as "ADMIN" | "SUPER_ADMIN")
-          }
+          onChange={(v) => setRole(v)}
+          style={{ width: 150 }}
         >
-          <option value="ADMIN">ADMIN</option>
-          <option value="SUPER_ADMIN">SUPER_ADMIN</option>
-        </select>
+          <Select.Option value="ADMIN">ADMIN</Select.Option>
+          <Select.Option value="SUPER_ADMIN">
+            SUPER_ADMIN
+          </Select.Option>
+        </Select>
 
-        <button type="submit">Add User</button>
-      </form>
+        <Button type="primary" onClick={handleCreate}>
+          Add User
+        </Button>
+      </Space>
 
       {/* TABLE */}
-      <table border={1} cellPadding={10}>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Email</th>
-            <th>Password</th>
-            <th>Role</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {users.map((u) => {
-            const isEditing = editingUserId === u.id;
-
-            return (
-              <tr key={u.id}>
-                <td>{u.id}</td>
-
-                {/* EMAIL */}
-                <td>
-                  {isEditing ? (
-                    <input
-                      value={editEmail}
-                      onChange={(e) => setEditEmail(e.target.value)}
-                    />
-                  ) : (
-                    u.email
-                  )}
-                </td>
-
-                {/* PASSWORD */}
-                <td>
-                  {isEditing ? (
-                    <div>
-                      <input
-                        type={showEditPassword ? "text" : "password"}
-                        placeholder="New password"
-                        value={editPassword}
-                        onChange={(e) => setEditPassword(e.target.value)}
-                      />
-
-                      <label style={{ marginLeft: 8 }}>
-                        <input
-                          type="checkbox"
-                          checked={showEditPassword}
-                          onChange={() => setShowEditPassword((prev) => !prev)}
-                        />
-                        Show
-                      </label>
-                    </div>
-                  ) : (
-                    "••••••"
-                  )}
-                </td>
-
-                {/* ROLE */}
-                <td>
-                  {isEditing ? (
-                    <select
-                      value={editRole}
-                      onChange={(e) =>
-                        setEditRole(
-                          e.target.value as "ADMIN" | "SUPER_ADMIN"
-                        )
-                      }
-                    >
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="SUPER_ADMIN">SUPER_ADMIN</option>
-                    </select>
-                  ) : (
-                    u.role
-                  )}
-                </td>
-
-                {/* ACTIONS */}
-                <td>
-                  {isEditing ? (
-                    <>
-                      <button onClick={() => saveEdit(u.id)}>Save</button>
-                      <button onClick={cancelEdit}>Cancel</button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => startEdit(u)}>Edit</button>
-                      <button
-                        onClick={() => {
-                          if (confirm("Delete this user?")) {
-                            deleteUser(u.id);
-                          }
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={users}
+        loading={loading}
+        pagination={{ pageSize: 10 }}
+      />
     </div>
   );
 };

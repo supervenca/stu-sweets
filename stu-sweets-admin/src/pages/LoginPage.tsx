@@ -1,103 +1,101 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Card, Form, Input, Button, Typography, message } from "antd";
 import api from "../api/httpClient";
 import axios from "axios";
 import { useAuthStore } from "../auth/auth.store";
 
+const { Title } = Typography;
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { checkAuth } = useAuthStore();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: {
+    email: string;
+    password: string;
+  }) => {
     if (loading) return;
-    setError(null);
+
     setLoading(true);
 
-try {
-      // Сохраняем ответ сервера
-      const res = await api.post("/auth/login", { email, password });
+    try {
+      const res = await api.post("/auth/login", values);
 
-      // Сохраняем JWT в localStorage
       localStorage.setItem("token", res.data.token);
-      // Обновляем store, чтобы ProtectedRoute сразу видел user
+
       await checkAuth();
-      // Переходим на dashboard
+
+      message.success("Welcome back 👋");
+
       navigate("/");
     } catch (err: unknown) {
-  if (axios.isAxiosError(err)) {
-    if (err.response?.status === 401) {
-      setError("Wrong email or password");
-    } else {
-      setError("Login error. Please try again later");
-    }
-  } else {
-    setError("Unknown error");
-  }
-} finally {
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 401) {
+          message.error("Wrong email or password");
+        } else {
+          message.error("Login error. Try again later");
+        }
+      } else {
+        message.error("Unknown error");
+      }
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={styles.wrapper}>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <h1>Admin Login</h1>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#f5f5f5",
+      }}
+    >
+      <Card style={{ width: 360 }}>
+        <Title level={3} style={{ textAlign: "center" }}>
+          Admin Login
+        </Title>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        <Form layout="vertical" onFinish={handleSubmit}>
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[
+              { required: true, message: "Enter email" },
+              { type: "email", message: "Invalid email" },
+            ]}
+          >
+            <Input placeholder="Email" />
+          </Form.Item>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+          <Form.Item
+            label="Password"
+            name="password"
+            rules={[
+              { required: true, message: "Enter password" },
+              { min: 6, message: "Min 6 characters" },
+            ]}
+          >
+            <Input.Password placeholder="Password" />
+          </Form.Item>
 
-        {error && <p style={styles.error}>{error}</p>}
-
-        <button type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={loading}
+            block
+          >
+            Login
+          </Button>
+        </Form>
+      </Card>
     </div>
   );
 };
 
 export default LoginPage;
-
-const styles: Record<string, React.CSSProperties> = {
-  wrapper: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#f5f5f5",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-    padding: 24,
-    width: 320,
-    background: "#fff",
-    borderRadius: 8,
-    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-  },
-  error: {
-    color: "red",
-    fontSize: 14,
-  },
-};

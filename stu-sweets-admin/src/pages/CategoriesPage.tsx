@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
 import { useCategoriesStore, type Category } from "../stores/categories.store";
-import { Table, Input, Button, Space, Popconfirm, Typography } from "antd";
+
+import { 
+  Table, 
+  Input, 
+  Button, 
+  Space, 
+  Popconfirm, 
+  Typography, 
+  message 
+} from "antd";
 import type { ColumnsType } from "antd/es/table";
-import toast from "react-hot-toast";
 
 const { Title, Text } = Typography;
 
@@ -32,13 +40,17 @@ const CategoriesPage = () => {
   const handleCreate = async () => {
     if (!name.trim()) return;
 
-    await toast.promise(createCategory(name), {
-      loading: "Creating...",
-      success: "Category created",
-      error: "Failed to create category",
-    });
+    const key = "create-category";
 
-    setName("");
+    message.loading({ content: "Creating...", key });
+
+    try {
+      await createCategory(name);
+      message.success({ content: "Category created", key });
+      setName("");
+    } catch {
+      message.error({ content: "Failed to create category", key });
+    }
   };
 
   const handleSave = async (id: number) => {
@@ -46,22 +58,33 @@ const CategoriesPage = () => {
 
     setPendingId(id);
 
-    await toast.promise(updateCategory(id, editingName), {
-      loading: "Saving...",
-      success: "Category updated",
-      error: "Failed to update category",
-    });
+    const key = "update-category";
+
+    message.loading({ content: "Saving...", key });
+
+    try {
+      await updateCategory(id, editingName);
+      message.success({ content: "Category updated", key });
+
+      setEditingId(null);
+    } catch {
+      message.error({ content: "Failed to update category", key });
+    }
 
     setPendingId(null);
-    setEditingId(null);
   };
 
   const handleDelete = async (id: number) => {
-    await toast.promise(deleteCategory(id), {
-      loading: "Deleting...",
-      success: "Category deleted",
-      error: "Failed to delete category",
-    });
+    const key = "delete-category";
+
+    message.loading({ content: "Deleting...", key });
+
+    try {
+      await deleteCategory(id);
+      message.success({ content: "Category deleted", key });
+    } catch {
+      message.error({ content: "Failed to delete category", key });
+    }
   };
 
   const columns: ColumnsType<Category> = [

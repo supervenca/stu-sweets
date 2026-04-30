@@ -8,12 +8,12 @@ import {
   Popconfirm,
   Typography,
   InputNumber,
+  message
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 
 import { useProductsStore } from "../stores/products.store";
 import { useCategoriesStore } from "../stores/categories.store";
-import toast from "react-hot-toast";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -67,55 +67,67 @@ const ProductsPage = () => {
   const handleCreate = async () => {
     if (!name.trim() || !price || price <= 0) return;
 
-    await toast.promise(
-      createProduct({
+    const key = "create-product";
+
+    message.loading({ content: "Adding product...", key });
+
+    try {
+      await createProduct({
         name: name.trim(),
         price,
         categoryId,
         description: description.trim(),
-      }),
-      {
-        loading: "Adding product...",
-        success: "Product added!",
-        error: "Failed to add product",
-      }
-    );
+      });
 
-    setName("");
-    setDescription("");
-    setPrice(null);
-    setCategoryId(null);
+      message.success({ content: "Product added!", key });
+
+      setName("");
+      setDescription("");
+      setPrice(null);
+      setCategoryId(null);
+    } catch {
+      message.error({ content: "Failed to add product", key });
+    }
   };
 
   // SAVE
   const handleSave = async (id: number) => {
     setPendingId(id);
 
-    await toast.promise(
-      updateProduct(id, {
+    const key = "update-product";
+
+    message.loading({ content: "Saving...", key });
+
+    try {
+      await updateProduct(id, {
         ...editingData,
         name: editingData.name.trim(),
         description: editingData.description.trim(),
-        price: Number(editingData.price)
-      }),
-      {
-        loading: "Saving...",
-        success: "Updated!",
-        error: "Failed",
-      }
-    );
+        price: Number(editingData.price),
+      });
 
-    setEditingId(null);
+      message.success({ content: "Updated!", key });
+
+      setEditingId(null);
+    } catch {
+      message.error({ content: "Failed", key });
+    }
+
     setPendingId(null);
   };
 
   // DELETE
   const handleDelete = async (id: number) => {
-    await toast.promise(deleteProduct(id), {
-      loading: "Deleting...",
-      success: "Deleted",
-      error: "Failed",
-    });
+    const key = "delete-product";
+
+    message.loading({ content: "Deleting...", key });
+
+    try {
+      await deleteProduct(id);
+      message.success({ content: "Deleted", key });
+    } catch {
+      message.error({ content: "Failed", key });
+    }
   };
 
   // TABLE

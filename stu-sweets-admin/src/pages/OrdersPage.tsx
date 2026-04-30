@@ -1,9 +1,25 @@
 import { useEffect, useState } from "react";
+import {
+  Table,
+  Input,
+  Button,
+  Space,
+  Select,
+  Popconfirm,
+  Typography,
+  InputNumber,
+  Card,
+  message,
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
+
 import { useOrdersStore } from "../stores/orders.store";
 import { useProductsStore } from "../stores/products.store";
 import type { Order } from "../stores/orders.store";
-import { downloadInvoice, generateInvoice } from "../stores/invoices.store";
-import toast from "react-hot-toast";
+
+const { Title, Text } = Typography;
+
+type OrderItem = Order["items"][number];
 
 const OrdersPage = () => {
   const {
@@ -23,361 +39,276 @@ const OrdersPage = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingData, setEditingData] = useState<Partial<Order>>({});
   const [pendingId, setPendingId] = useState<number | null>(null);
-  const [validationErrors, setValidationErrors] = useState<{
-    customerName?: string;
-    customerEmail?: string;
-    customerPhone?: string;
-  }>({});
+
   const [newProductId, setNewProductId] = useState<number | null>(null);
   const [newQuantity, setNewQuantity] = useState(1);
-  
-
-  const validateOrderData = (data: Partial<Order>) => {
-  const errors: typeof validationErrors = {};
-  if (data.customerName !== undefined && data.customerName.trim() === "") {
-    errors.customerName = "Name cannot be empty";
-  }
-  if (data.customerEmail !== undefined) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.customerEmail)) {
-      errors.customerEmail = "Invalid email format";
-    }
-  }
-  if (data.customerPhone !== undefined) {
-    const digits = data.customerPhone.replace(/\D/g, "");
-    if (digits.length < 10) {
-      errors.customerPhone = "Phone must have at least 10 digits";
-    }
-  }
-  setValidationErrors(errors);
-  return Object.keys(errors).length === 0;
-};
 
   useEffect(() => {
     fetchOrders();
     fetchProducts();
   }, [fetchOrders, fetchProducts]);
 
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  // ITEMS TABLE
+  const renderItemsTable = (order: Order) => {
+    const itemColumns: ColumnsType<OrderItem> = [
+      {
+        title: "Product",
+        render: (_, item) => item.product?.name ?? "Unknown",
+      },
+      {
+        title: "Qty",
+        render: (_, item) => (
+          <InputNumber
+            min={1}
+            value={item.quantity}
+            onChange={(value) => {
+              if (!value) return;
+
+              updateItem(order.id, item.id, {
+                quantity: Number(value),
+              });
+
+              message.success("Quantity updated");
+            }}
+          />
+        ),
+      },
+      {
+        title: "Price",
+        render: (_, item) => `€${item.price}`,
+      },
+      {
+        title: "",
+        render: (_, item) => (
+          <Popconfirm
+            title="Remove item?"
+            onConfirm={() => {
+              deleteItem(order.id, item.id);
+              message.success("Item removed");
+            }}
+          >
+            <Button danger size="small">
+              Delete
+            </Button>
+          </Popconfirm>
+        ),
+      },
+    ];
+
+    return (
+      <Card size="small" style={{ background: "#fafafa" }}>
+        <Table<OrderItem>
+          size="small"
+          rowKey="id"
+          columns={itemColumns}
+          dataSource={order.items}
+          pagination={false}
+        />
+
+        {/* ADD ITEM */}
+        <Space style={{ marginTop: 8 }}>
+          <Select
+            placeholder="Product"
+            value={newProductId ?? undefined}
+            onChange={(v) => setNewProductId(v)}
+            style={{ width: 180 }}
+          >
+            {products.map((p) => (
+              <Select.Option key={p.id} value={p.id}>
+                {p.name}
+              </Select.Option>
+            ))}
+          </Select>
+
+          <InputNumber
+            min={1}
+            value={newQuantity}
+            onChange={(v) => setNewQuantity(Number(v))}
+          />
+
+          <Button
+            type="dashed"
+            onClick={() => {
+              if (!newProductId) {
+                message.error("Select product");
+                return;
+              }
+
+              addItem(order.id, {
+                productId: newProductId,
+                quantity: newQuantity,
+              });
+
+              message.success("Item added");
+
+              setNewProductId(null);
+              setNewQuantity(1);
+            }}
+          >
+            + Add
+          </Button>
+        </Space>
+      </Card>
+    );
+  };
+
+  // =====================
+  // MAIN TABLE
+  // =====================
+  const columns: ColumnsType<Order> = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      width: 70,
+    },
+    {
+      title: "Customer",
+      render: (_, o) =>
+        editingId === o.id ? (
+          <Input
+            value={editingData.customerName ?? o.customerName}
+            onChange={(e) =>
+              setEditingData((p) => ({
+                ...p,
+                customerName: e.target.value,
+              }))
+            }
+          />
+        ) : (
+          o.customerName
+        ),
+    },
+    {
+      title: "Email",
+      render: (_, o) =>
+        editingId === o.id ? (
+          <Input
+            value={editingData.customerEmail ?? o.customerEmail}
+            onChange={(e) =>
+              setEditingData((p) => ({
+                ...p,
+                customerEmail: e.target.value,
+              }))
+            }
+          />
+        ) : (
+          o.customerEmail
+        ),
+    },
+    {
+      title: "Phone",
+      render: (_, o) =>
+        editingId === o.id ? (
+          <Input
+            value={editingData.customerPhone ?? o.customerPhone}
+            onChange={(e) =>
+              setEditingData((p) => ({
+                ...p,
+                customerPhone: e.target.value,
+              }))
+            }
+          />
+        ) : (
+          o.customerPhone ?? "—"
+        ),
+    },
+    {
+      title: "Items",
+      render: (_, o) => renderItemsTable(o),
+    },
+    {
+      title: "Status",
+      render: (_, o) =>
+        editingId === o.id ? (
+          <Select
+            value={editingData.status ?? o.status}
+            onChange={(v) =>
+              setEditingData((p) => ({ ...p, status: v }))
+            }
+            style={{ width: 140 }}
+          >
+            {["PENDING", "CONFIRMED", "PAID", "FULFILLED", "CANCELED"].map(
+              (s) => (
+                <Select.Option key={s} value={s}>
+                  {s}
+                </Select.Option>
+              )
+            )}
+          </Select>
+        ) : (
+          o.status
+        ),
+    },
+    {
+      title: "Total",
+      render: (_, o) => <b>€{o.total}</b>,
+    },
+    {
+      title: "Actions",
+      render: (_, o) =>
+        editingId === o.id ? (
+          <Space>
+            <Button
+              type="primary"
+              loading={pendingId === o.id}
+              onClick={async () => {
+                setPendingId(o.id);
+
+                await updateOrder(o.id, editingData);
+
+                message.success("Order updated");
+
+                setEditingId(null);
+                setPendingId(null);
+              }}
+            >
+              Save
+            </Button>
+
+            <Button onClick={() => setEditingId(null)}>
+              Cancel
+            </Button>
+          </Space>
+        ) : (
+          <Space>
+            <Button
+              onClick={() => {
+                setEditingId(o.id);
+                setEditingData({ status: o.status });
+              }}
+            >
+              Edit
+            </Button>
+
+            <Popconfirm
+              title="Delete order?"
+              onConfirm={() => {
+                deleteOrder(o.id);
+                message.success("Order deleted");
+              }}
+            >
+              <Button danger>Delete</Button>
+            </Popconfirm>
+          </Space>
+        ),
+    },
+  ];
+
+  if (error) return <Text type="danger">{error}</Text>;
 
   return (
-    <div>
-    <h1 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-      Orders
-      <span style={{ color: "#6b7280" }}>({orders.length})</span>
+    <div style={{ padding: 20 }}>
+      <Title level={3}>Orders ({orders.length})</Title>
 
-      {loading && (
-        <span style={{ fontSize: "14px", color: "#6b7280" }}>
-          ⟳ updating...
-        </span>
-      )}
-    </h1>
-
-    {orders.length === 0 ? (
-      <p>No orders yet</p>
-      ) : (
-        <table style={tableStyles.table}>
-          <thead>
-            <tr>
-              <th style={tableStyles.th}>ID</th>
-              <th style={tableStyles.th}>Customer</th>
-              <th style={tableStyles.th}>Email</th>
-              <th style={tableStyles.th}>Phone</th>
-              <th style={tableStyles.th}>Items</th>
-              <th style={tableStyles.th}>Status</th>
-              <th style={tableStyles.th}>Total</th>
-              <th style={tableStyles.th}>Actions</th>
-              <th style={tableStyles.th}>Invoice</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {orders
-              .slice()
-              .sort((a, b) => a.id - b.id)
-              .map((o) => {
-                const isEditing = editingId === o.id;
-              return (
-                <tr key={o.id}>
-                  <td style={tableStyles.td}>{o.id}</td>
-                  {/* CUSTOMER NAME */}
-                  <td style={tableStyles.td}>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={editingData.customerName ?? o.customerName}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setEditingData((prev) => ({ ...prev, customerName: val }));
-                          validateOrderData({ ...editingData, customerName: val });
-                        }}
-                        style={{
-                          borderColor: validationErrors.customerName ? "red" : undefined,
-                        }}
-                      />
-                    ) : (
-                      o.customerName
-                    )}
-                  </td>
-                  {/* CUSTOMER EMAIL */}
-                  <td style={tableStyles.td}>
-                    {isEditing ? (
-                      <input
-                        type="email"
-                        value={editingData.customerEmail ?? o.customerEmail}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setEditingData((prev) => ({ ...prev, customerEmail: val }));
-                          validateOrderData({ ...editingData, customerEmail: val });
-                        }}
-                        style={{
-                          borderColor: validationErrors.customerEmail ? "red" : undefined,
-                        }}
-                      />
-                    ) : (
-                      o.customerEmail
-                    )}
-                  </td>
-                  {/* CUSTOMER PHONE */}
-                  <td style={tableStyles.td}>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={editingData.customerPhone ?? o.customerPhone ?? ""}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setEditingData((prev) => ({ ...prev, customerPhone: val }));
-                          validateOrderData({ ...editingData, customerPhone: val });
-                        }}
-                        style={{
-                          borderColor: validationErrors.customerPhone ? "red" : undefined,
-                        }}
-                      />
-                    ) : (
-                      o.customerPhone ?? "—"
-                    )}
-                  </td>
-                  {/* ITEMS */}
-                  <td style={tableStyles.td}>
-                    {o.items
-                      .slice()
-                      .sort((a, b) => a.id - b.id)
-                      .map((i) => (
-                        <div key={i.id} style={tableStyles.itemRow}>
-                          {i.product?.name ?? "Unknown"}
-                      {/* EDIT ITEM QUANTITY */}
-                        <input
-                          type="number"
-                          min={1}
-                          value={i.quantity}
-                          style={tableStyles.qtyInput}
-                          onChange={(e) => {
-                            const newQty = Number(e.target.value);
-
-                            const confirmed = window.confirm(
-                              `Change quantity to ${newQty}?`
-                            );
-
-                            if (!confirmed) return;
-
-                            updateItem(o.id, i.id, {
-                              quantity: newQty,
-                            });
-                          }}
-                        />
-                        <span>€{i.price}</span>
-                        {/* DELETE ITEM */}
-                        <button
-                            style={tableStyles.deleteItemBtn}
-                            onClick={() => {
-                              const confirmed = window.confirm(
-                                `Remove ${i.product?.name} from order?`
-                              );
-
-                              if (!confirmed) return;
-
-                              deleteItem(o.id, i.id);
-                            }}
-                          >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* ADD ITEM */}
-                    <div style={tableStyles.addRow}>
-                      <select
-                        value={newProductId ?? ""}
-                        onChange={(e) =>
-                          setNewProductId(Number(e.target.value))
-                        }
-                      >
-                        <option value="">Product</option>
-                        {products.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-
-                      <input
-                        type="number"
-                        min={1}
-                        value={newQuantity}
-                        onChange={(e) =>
-                          setNewQuantity(Number(e.target.value))
-                        }
-                        style={tableStyles.qtyInput}
-                      />
-
-                      <button
-                        onClick={() => {
-                          if (!newProductId) return;
-
-                          addItem(o.id, {
-                            productId: newProductId,
-                            quantity: newQuantity,
-                          });
-
-                          setNewProductId(null);
-                          setNewQuantity(1);
-                        }}
-                      >
-                        + Add
-                      </button>
-                    </div>
-                  </td>
-
-                  {/* STATUS */}
-                  <td style={tableStyles.td}>
-                    {isEditing ? (
-                      <select
-                        value={editingData.status ?? o.status}
-                        onChange={(e) =>
-                          setEditingData((prev) => ({
-                            ...prev,
-                            status: e.target.value as Order["status"],
-                          }))
-                        }
-                      >
-                        {[
-                          "PENDING",
-                          "CONFIRMED",
-                          "PAID",
-                          "FULFILLED",
-                          "CANCELED",
-                        ].map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      o.status
-                    )}
-                  </td>
-                  {/* TOTAL */}
-                  <td style={tableStyles.td}>€{o.total}</td>
-
-                  {/* ACTIONS */}
-                  <td style={tableStyles.td}>
-                    {isEditing ? (
-                      <>
-                        <button
-                          onClick={() => {
-                            const isValid = validateOrderData(editingData);
-                            if (!isValid) {
-                              const firstError = Object.values(validationErrors)[0];
-                              if (firstError) toast.error(firstError);
-                              return;
-                            }
-                            const confirmed = window.confirm("Save changes to this order?");
-                            if (!confirmed) return;
-                            setPendingId(o.id);
-                            updateOrder(o.id, editingData)
-                              .then(() => setEditingId(null))
-                              .finally(() => setPendingId(null));
-                          }}
-                        >
-                          {pendingId === o.id ? "Saving..." : "Save"}
-                        </button>
-
-                        <button onClick={() => setEditingId(null)}>
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => {
-                            setEditingId(o.id);
-                            setEditingData({ status: o.status });
-                          }}
-                        >
-                          Edit
-                        </button>
-
-                        <button onClick={() => deleteOrder(o.id)}>
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </td>
-                  
-                  {/* INVOICE */}
-                  <td style={tableStyles.td}>
-                    <button
-                      onClick={() => generateInvoice(o.id)}
-                      disabled={o.invoiceExists} // можно дизейблить, если уже сгенерирован
-                    >{o.invoiceExists ? "Invoice Generated" : "Generate"}
-                    </button>
-
-                    <button
-                      onClick={() => downloadInvoice(o.id)}
-                      disabled={!o.invoiceExists}
-                    >{o.invoiceExists ? "Download PDF" : "No Invoice"}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={orders}
+        loading={loading}
+        pagination={{ pageSize: 10 }}
+      />
     </div>
   );
 };
 
 export default OrdersPage;
-
-const tableStyles: Record<string, React.CSSProperties> = {
-  table: { width: "100%", borderCollapse: "collapse", background: "#fff" },
-
-  th: { textAlign: "left", padding: "12px", borderBottom: "2px solid #e5e7eb" },
-
-  td: { padding: "12px", borderBottom: "1px solid #e5e7eb", verticalAlign: "top" },
-
-  itemRow: {
-    display: "flex",
-    gap: "8px",
-    alignItems: "center",
-    marginBottom: "4px",
-  },
-
-  qtyInput: {
-    width: "60px",
-  },
-
-  deleteItemBtn: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: "red",
-  },
-
-  addRow: {
-    display: "flex",
-    gap: "6px",
-    marginTop: "6px",
-  },
-};
