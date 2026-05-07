@@ -1,19 +1,11 @@
 import { useEffect, useState } from "react";
-import {
-  Table,
-  Input,
-  Button,
-  Space,
-  Select,
-  Popconfirm,
-  Typography,
-  InputNumber,
-  message
-} from "antd";
+import { Row, Col, Table, Input, Button, Space, Select, Popconfirm, Typography, InputNumber, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 
 import { useProductsStore } from "../stores/products.store";
 import { useCategoriesStore } from "../stores/categories.store";
+
+import { useResponsive, TABLE_CONFIG } from "../shared/responsive";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -31,6 +23,14 @@ type Product = {
 };
 
 const ProductsPage = () => {
+  const { isMobile, isTablet } = useResponsive();
+
+  const tableConfig = isMobile
+    ? TABLE_CONFIG.mobile
+    : isTablet
+    ? TABLE_CONFIG.tablet
+    : TABLE_CONFIG.desktop;
+
   const {
     products,
     loading,
@@ -220,7 +220,7 @@ const ProductsPage = () => {
       title: "Actions",
       render: (_, record) =>
         editingId === record.id ? (
-          <Space>
+          <Space direction={isMobile ? "vertical" : "horizontal"}>
             <Button
               type="primary"
               loading={pendingId === record.id}
@@ -231,7 +231,7 @@ const ProductsPage = () => {
             <Button onClick={() => setEditingId(null)}>Cancel</Button>
           </Space>
         ) : (
-          <Space>
+          <Space direction={isMobile ? "vertical" : "horizontal"}>
             <Button
               onClick={() => {
                 setEditingId(record.id);
@@ -268,54 +268,72 @@ const ProductsPage = () => {
       </Title>
 
       {/* CREATE */}
-      <Space style={{ marginBottom: 16 }}>
-        <Input
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+      <Row gutter={[8, 8]} wrap style={{ marginBottom: 16 }}>
+        <Col xs={24} sm={24} md={12} lg={5}>
+          <Input
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Col>
 
-        <InputNumber
-          placeholder="Price (€)"
-          value={price ?? undefined}
-          onChange={(v) => setPrice(v ?? null)}
-        />
+        <Col xs={24} sm={24} md={12} lg={3}>
+          <InputNumber
+            style={{ width: "100%" }}
+            placeholder="Price (€)"
+            value={price ?? undefined}
+            onChange={(v) => setPrice(v ?? null)}
+          />
+        </Col>
 
-        <Input.TextArea
-          placeholder="Description"
-          value={description}
-          maxLength={500}
-          rows={2}
-          onChange={(e) => setDescription(e.target.value)}
-          style={{ width: 250 }}
-          showCount
-        />
+        <Col xs={24} sm={24} md={12} lg={5}>
+          <TextArea
+            placeholder="Description"
+            value={description}
+            maxLength={500}
+            rows={2}
+            onChange={(e) => setDescription(e.target.value)}
+            showCount
+            style={{ marginBottom: 20 }}
+          />
+        </Col>
 
-        <Select
-          placeholder="Category"
-          value={categoryId ?? undefined}
-          onChange={(v) => setCategoryId(v ?? null)}
-          allowClear
-          style={{ width: 180 }}
-        >
-          {categories.map((c) => (
-            <Select.Option key={c.id} value={c.id}>
-              {c.name}
-            </Select.Option>
-          ))}
-        </Select>
+        <Col xs={24} sm={24} md={12} lg={5}>
+          <Select
+            placeholder="Category"
+            value={categoryId ?? undefined}
+            onChange={(v) => setCategoryId(v ?? null)}
+            allowClear
+            style={{ width: "100%" }}
+          >
+            {categories.map((c) => (
+              <Select.Option key={c.id} value={c.id}>
+                {c.name}
+              </Select.Option>
+            ))}
+          </Select>
+        </Col>
 
-        <Button type="primary" onClick={handleCreate}>
-          Add
-        </Button>
-      </Space>
+        <Col xs={24} sm={24} md={12} lg={3}>
+          <Button
+            type="primary"
+            block
+            onClick={handleCreate}
+            style={{ width: 200 }}
+          >
+            Add
+          </Button>
+        </Col>
+      </Row>
 
       <Table
         rowKey="id"
         dataSource={products}
         columns={columns}
         loading={loading}
-        pagination={{ pageSize: 10 }}
+        scroll={{ x: tableConfig.scrollX }}
+        size={tableConfig.size}
+        pagination={{ pageSize: tableConfig.pageSize }}
       />
     </div>
   );

@@ -1,16 +1,10 @@
 import { useEffect, useState } from "react";
 import { useCategoriesStore, type Category } from "../stores/categories.store";
 
-import { 
-  Table, 
-  Input, 
-  Button, 
-  Space, 
-  Popconfirm, 
-  Typography, 
-  message 
-} from "antd";
+import { Row, Col, Table, Input, Button, Space, Popconfirm, Typography, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
+
+import { TABLE_CONFIG, useResponsive } from "../shared/responsive";
 
 const { Title, Text } = Typography;
 
@@ -32,6 +26,14 @@ const CategoriesPage = () => {
 
   const isAddDisabled = !name.trim();
   const isSaveDisabled = !editingName.trim();
+
+  const { isMobile, isTablet } = useResponsive();
+
+  const tableConfig = isMobile
+    ? TABLE_CONFIG.mobile
+    : isTablet
+    ? TABLE_CONFIG.tablet
+    : TABLE_CONFIG.desktop;
 
   useEffect(() => {
     fetchCategories();
@@ -95,6 +97,7 @@ const CategoriesPage = () => {
     },
     {
       title: "Name",
+      width: isMobile ? 100 : 300,
       render: (_, record) =>
         editingId === record.id ? (
           <Input
@@ -108,9 +111,10 @@ const CategoriesPage = () => {
     },
     {
       title: "Actions",
+      width: isMobile ? 120 : 220,
       render: (_, record) =>
         editingId === record.id ? (
-          <Space>
+          <Space direction={isMobile ? "vertical" : "horizontal"}>
             <Button
               type="primary"
               onClick={() => handleSave(record.id)}
@@ -129,7 +133,7 @@ const CategoriesPage = () => {
             </Button>
           </Space>
         ) : (
-          <Space>
+          <Space direction={isMobile ? "vertical" : "horizontal"}>
             <Button
               onClick={() => {
                 setEditingId(record.id);
@@ -162,20 +166,24 @@ const CategoriesPage = () => {
       </Title>
 
       {/* CREATE */}
-      <Space style={{ marginBottom: 16 }}>
-        <Input
-          placeholder="Category name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Button
-          type="primary"
-          onClick={handleCreate}
-          disabled={isAddDisabled}
-        >
-          Add
-        </Button>
-      </Space>
+      <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
+        <Col xs={24} sm={18} >
+          <Input
+            placeholder="Category name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Col>
+        <Col xs={24} sm={6}>
+          <Button
+            type="primary"
+            onClick={handleCreate}
+            disabled={isAddDisabled}
+          >
+            Add
+          </Button>
+        </Col>
+      </Row>
 
       {/* TABLE */}
       <Table
@@ -183,7 +191,10 @@ const CategoriesPage = () => {
         dataSource={categories}
         columns={columns}
         loading={loading}
-        pagination={{ pageSize: 10 }}
+        scroll={{ x: isMobile ? 500 : 700 }}
+        size={tableConfig.size}
+        pagination={{ pageSize: tableConfig.pageSize }}
+        tableLayout="auto"
       />
     </div>
   );

@@ -17,6 +17,9 @@ import { useOrdersStore } from "../stores/orders.store";
 import { useProductsStore } from "../stores/products.store";
 import type { Order } from "../stores/orders.store";
 
+import { useResponsive, TABLE_CONFIG} from "../shared/responsive";
+
+
 const { Title, Text } = Typography;
 
 type OrderItem = Order["items"][number];
@@ -42,6 +45,11 @@ const OrdersPage = () => {
 
   const [newProductId, setNewProductId] = useState<number | null>(null);
   const [newQuantity, setNewQuantity] = useState(1);
+
+  const { isMobile } = useResponsive();
+  const tableConfig = isMobile
+  ? TABLE_CONFIG.mobile
+  : TABLE_CONFIG.desktop;
 
   useEffect(() => {
     fetchOrders();
@@ -96,7 +104,7 @@ const OrdersPage = () => {
     ];
 
     return (
-      <Card size="small" style={{ background: "#fafafa" }}>
+      <Card size="small" style={{ background: "#fafafa", overflowX: "auto" }}>
         <Table<OrderItem>
           size="small"
           rowKey="id"
@@ -106,7 +114,7 @@ const OrdersPage = () => {
         />
 
         {/* ADD ITEM */}
-        <Space style={{ marginTop: 8 }}>
+        <Space wrap style={{ marginTop: 8 }}>
           <Select
             placeholder="Product"
             value={newProductId ?? undefined}
@@ -152,14 +160,12 @@ const OrdersPage = () => {
     );
   };
 
-  // =====================
   // MAIN TABLE
-  // =====================
   const columns: ColumnsType<Order> = [
     {
       title: "ID",
       dataIndex: "id",
-      width: 70,
+      width: 60,
     },
     {
       title: "Customer",
@@ -214,6 +220,7 @@ const OrdersPage = () => {
     },
     {
       title: "Items",
+      width: 300,
       render: (_, o) => renderItemsTable(o),
     },
     {
@@ -247,7 +254,7 @@ const OrdersPage = () => {
       title: "Actions",
       render: (_, o) =>
         editingId === o.id ? (
-          <Space>
+          <Space wrap>
             <Button
               type="primary"
               loading={pendingId === o.id}
@@ -270,7 +277,7 @@ const OrdersPage = () => {
             </Button>
           </Space>
         ) : (
-          <Space>
+          <Space wrap>
             <Button
               onClick={() => {
                 setEditingId(o.id);
@@ -306,6 +313,8 @@ const OrdersPage = () => {
         dataSource={orders}
         loading={loading}
         pagination={{ pageSize: 10 }}
+        size={tableConfig.size}
+        scroll={{ x: tableConfig.scrollX }}
       />
     </div>
   );

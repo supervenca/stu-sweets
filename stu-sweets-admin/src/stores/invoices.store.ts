@@ -1,4 +1,5 @@
 // NOT IN USE FOR NOW (COULD BE ADDED BACK LATER)
+// if it's added back, replace react-hot-toast with antd's message component
 
 import api from "../api/httpClient";
 import toast from "react-hot-toast";

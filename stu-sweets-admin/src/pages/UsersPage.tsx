@@ -1,18 +1,11 @@
 import { useEffect, useState } from "react";
-import {
-  Table,
-  Input,
-  Button,
-  Space,
-  Select,
-  Popconfirm,
-  Typography,
-  message,
-} from "antd";
+import { Row, Col, Table, Input, Button, Space, Select, Popconfirm, Typography, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 
 import { useUsersStore } from "../stores/users.store";
 import type { User } from "../stores/users.store";
+
+import { TABLE_CONFIG, useResponsive } from "../shared/responsive";
 
 const { Title } = Typography;
 
@@ -42,6 +35,14 @@ const UsersPage = () => {
   useEffect(() => {
     fetchUsers().catch((e) => message.error(e.message));
   }, [fetchUsers]);
+  
+  const { isMobile, isTablet } = useResponsive();
+  
+    const tableConfig = isMobile
+      ? TABLE_CONFIG.mobile
+      : isTablet
+      ? TABLE_CONFIG.tablet
+      : TABLE_CONFIG.desktop;
 
   // validation
   const isValidEmail = (email: string) =>
@@ -115,6 +116,7 @@ const UsersPage = () => {
     },
     {
       title: "Email",
+      width: 200,
       render: (_, record) =>
         editingId === record.id ? (
           <Input
@@ -127,6 +129,7 @@ const UsersPage = () => {
     },
     {
       title: "Password",
+      width: 150,
       render: (_, record) =>
         editingId === record.id ? (
           <Input.Password
@@ -140,6 +143,7 @@ const UsersPage = () => {
     },
     {
       title: "Role",
+      width: 150,
       render: (_, record) =>
         editingId === record.id ? (
           <Select
@@ -160,7 +164,7 @@ const UsersPage = () => {
       title: "Actions",
       render: (_, record) =>
         editingId === record.id ? (
-          <Space>
+          <Space direction={isMobile ? "vertical" : "horizontal"}>
             <Button
               type="primary"
               loading={pendingId === record.id}
@@ -173,7 +177,7 @@ const UsersPage = () => {
             </Button>
           </Space>
         ) : (
-          <Space>
+          <Space direction={isMobile ? "vertical" : "horizontal"}>
             <Button
               onClick={() => {
                 setEditingId(record.id);
@@ -209,34 +213,39 @@ const UsersPage = () => {
       <Title level={3}>Users</Title>
 
       {/* CREATE */}
-      <Space style={{ marginBottom: 16 }}>
-        <Input
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <Input.Password
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <Select
-          value={role}
-          onChange={(v) => setRole(v)}
-          style={{ width: 150 }}
-        >
-          <Select.Option value="ADMIN">ADMIN</Select.Option>
-          <Select.Option value="SUPER_ADMIN">
-            SUPER_ADMIN
-          </Select.Option>
-        </Select>
-
+      <Row gutter={[8, 8]} wrap style={{ marginBottom: 16 }}>
+        <Col xs={24} sm={24} md={12} lg={5}>
+          <Input
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </Col>
+        <Col xs={24} sm={24} md={12} lg={5}>
+          <Input.Password
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </Col>
+        <Col xs={24} sm={24} md={12} lg={5}>
+          <Select
+            value={role}
+            onChange={(v) => setRole(v)}
+            style={{ width: 150 }}
+          >
+            <Select.Option value="ADMIN">ADMIN</Select.Option>
+            <Select.Option value="SUPER_ADMIN">
+              SUPER_ADMIN
+            </Select.Option>
+          </Select>
+        </Col>
+        <Col xs={24} sm={24} md={12}>
         <Button type="primary" onClick={handleCreate}>
           Add User
         </Button>
-      </Space>
+        </Col>
+      </Row>
 
       {/* TABLE */}
       <Table
@@ -244,7 +253,9 @@ const UsersPage = () => {
         columns={columns}
         dataSource={users}
         loading={loading}
-        pagination={{ pageSize: 10 }}
+        scroll={{ x: tableConfig.scrollX }}
+        size={tableConfig.size}
+        pagination={{ pageSize: tableConfig.pageSize }}
       />
     </div>
   );
