@@ -32,17 +32,44 @@ export async function createProduct(data: CreateProductDto) {
 }
 
 export async function updateProduct(id: number, data: UpdateProductDto) {
-  const categoryIdInt = data.categoryId != null ? parseInt(data.categoryId as any, 10) : null;
+  const categoryIdInt =
+    data.categoryId !== undefined
+      ? data.categoryId === null
+        ? null
+        : parseInt(data.categoryId as any, 10)
+      : undefined;
 
   return prisma.product.update({
     where: { id },
     data: {
-      name: data.name,
-      description: data.description,
-      price: data.price !== undefined ? new Decimal(data.price) : undefined,
-      stock: data.stock,
-      categoryId: categoryIdInt,
-    },
+  ...(data.name !== undefined && {
+    name: data.name,
+  }),
+
+  ...(data.description !== undefined && {
+    description: data.description,
+  }),
+
+  ...(data.price !== undefined && {
+    price: new Decimal(data.price),
+  }),
+
+  ...(data.stock !== undefined && {
+    stock: data.stock,
+  }),
+
+  ...(categoryIdInt !== undefined && {
+    categoryId: categoryIdInt,
+  }),
+
+  ...(data.isBestseller !== undefined && {
+    isBestseller: data.isBestseller,
+  }),
+
+  ...(data.isCartRecommendation !== undefined && {
+    isCartRecommendation: data.isCartRecommendation,
+  }),
+},
     include: { category: true },
   });
 }

@@ -5,20 +5,26 @@ export type Product = {
   id: number;
   name: string;
   price: number;
+  stock?: number;
   description: string;
   categoryId: number | null;
   category?: {
     id: number;
     name: string;
   };
+  isBestseller?: boolean;
+  isCartRecommendation?: boolean;
 };
 
 type CreateProductDto = {
   name: string;
   price: number;
+  stock?: number;
   description: string;
   categoryId: number | null;
-};
+  isBestseller?: boolean;
+  isCartRecommendation?: boolean;
+  };
 
 type ProductsState = {
   products: Product[];
@@ -29,6 +35,8 @@ type ProductsState = {
   createProduct: (data: CreateProductDto) => Promise<void>;
   updateProduct: (id: number, data: CreateProductDto) => Promise<void>;
   deleteProduct: (id: number) => Promise<void>;
+  toggleBestseller: (id: number, value: boolean) => Promise<void>;
+  toggleRecommendation: (id: number, value: boolean) => Promise<void>;
 };
 
 export const useProductsStore = create<ProductsState>((set) => ({
@@ -63,7 +71,7 @@ export const useProductsStore = create<ProductsState>((set) => ({
   updateProduct: async (id, data) => {
     console.log("Updating product", id, "with data:", data);
     try {
-      const res = await api.put(`/internal/products/${id}`, data);
+      const res = await api.patch(`/internal/products/${id}`, data);
       console.log("Response from server:", res.data);
       set((state) => ({
         products: state.products.map((p) =>
@@ -72,6 +80,46 @@ export const useProductsStore = create<ProductsState>((set) => ({
       }));
     } catch {
       set({ error: "Failed to update product" });
+    }
+  },
+
+  toggleBestseller: async (id: number, value: boolean) => {
+  try {
+    const res = await api.patch(
+      `/internal/products/${id}`,
+      {
+        isBestseller: value,
+      }
+    );
+
+    set((state) => ({
+      products: state.products.map((p) =>
+        p.id === id ? res.data : p
+      ),
+    }));
+  } catch {
+    set({ error: "Failed to update bestseller" });
+  }
+},
+
+  toggleRecommendation: async (id: number, value: boolean) => {
+    try {
+      const res = await api.patch(
+        `/internal/products/${id}`,
+        {
+          isCartRecommendation: value,
+        }
+      );
+
+      set((state) => ({
+        products: state.products.map((p) =>
+          p.id === id ? res.data : p
+        ),
+      }));
+    } catch {
+      set({
+        error: "Failed to update recommendation",
+      });
     }
   },
 

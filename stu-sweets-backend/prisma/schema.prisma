@@ -45,7 +45,11 @@ model Product {
   createdAt   DateTime    @default(now())
   categoryId  Int?
   category    Category?   @relation("ProductToCategory", fields: [categoryId], references: [id])
+  
   orderItems  OrderItem[]
+
+  isBestseller        Boolean @default(false)
+  isCartRecommendation Boolean @default(false)
 }
 
 model OrderItem {

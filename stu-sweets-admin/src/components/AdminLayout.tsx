@@ -7,6 +7,7 @@ import {
   UserOutlined,
   TeamOutlined,
   LogoutOutlined,
+  StarOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../auth/auth.store";
@@ -40,6 +41,11 @@ const AdminLayout = () => {
       key: "/categories",
       icon: <TagsOutlined />,
       label: "Categories",
+    },
+    {
+      key: "/bestsellers",
+      icon: <StarOutlined />,
+      label: "Bestsellers",
     },
     {
       key: "/clients",

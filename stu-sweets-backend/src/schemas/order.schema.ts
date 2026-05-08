@@ -4,7 +4,7 @@ export const orderItemSchema = z.object({
   productId: z.number().int(),
   quantity: z.number().int().positive(),
   price: z.number().positive(),
-});
+}).strict();
 
 // Схема для создания заказа
 export const createOrderSchema = z.object({
@@ -21,7 +21,7 @@ export const createOrderSchema = z.object({
   }, "Phone must have at least 10 digits"),
   comment: z.string().optional(),
   items: z.array(orderItemSchema).min(1, "At least one item is required"),
-});
+}).strict();
 
 // Схема для обновления заказа (например, изменение статуса)
 export const updateOrderSchema = z.object({
@@ -39,17 +39,17 @@ export const updateOrderSchema = z.object({
   comment: z.string().optional(),
   status: z.enum(["PENDING", "CONFIRMED", "PAID", "FULFILLED", "CANCELED"]).optional(),
   total: z.number().optional(),
-});
+}).strict();
 
 // Схема для обновления позиции заказа (например, изменение количества или продукта)
 export const updateOrderItemSchema = z.object({
   productId: z.number().int().optional(), // можно менять продукт
   quantity: z.number().int().positive().optional(), // или количество
   price: z.number().positive().optional(), // цена может обновляться
-});
+}).strict();
 
 // Схема для добавления новой позиции в заказ
 export const addOrderItemSchema = z.object({
   productId: z.number().int(),
   quantity: z.number().int().positive(),
-});
+}).strict();

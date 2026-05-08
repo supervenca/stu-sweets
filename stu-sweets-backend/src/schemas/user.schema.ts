@@ -4,9 +4,9 @@ export const createUserSchema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6),
   name: z.string().min(1, "User name is required").optional()
-});
+}).strict();
 // Схема для обновления пользователя
 export const updateUserSchema = z.object({
   email: z.string().email("Invalid email").optional(),
   name: z.string().min(1, "User name is required").optional()
-});
+}).strict();

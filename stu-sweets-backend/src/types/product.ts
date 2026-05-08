@@ -4,6 +4,8 @@ export interface CreateProductDto {
   price: number;
   stock?: number;
   categoryId?: number | null;
+  isBestseller?: boolean;
+  isCartRecommendation?: boolean;
 }
 
 export interface UpdateProductDto {
@@ -12,4 +14,6 @@ export interface UpdateProductDto {
   price?: number;
   stock?: number;
   categoryId?: number | null;
+  isBestseller?: boolean;
+  isCartRecommendation?: boolean;
 }

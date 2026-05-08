@@ -1,11 +1,5 @@
 import type { Request, Response } from "express";
-import {
-  getAllProducts,
-  getProductById,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} from "../services/product.service.js";
+import { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct } from "../services/product.service.js";
 import { createProductSchema, updateProductSchema } from "../schemas/product.schema.js";
 import { HttpError } from "../utils/httpError.js";
 

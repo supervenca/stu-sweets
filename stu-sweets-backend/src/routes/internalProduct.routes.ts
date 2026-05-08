@@ -14,7 +14,7 @@ router.use(authMiddleware);
 router.get("/", getAllProductsPublicController);
 router.get("/:id", getProductByIdPublicController);
 router.post("/", createProductController);
-router.put("/:id", updateProductController);
+router.patch("/:id", updateProductController);
 router.delete("/:id", deleteProductController);
 
 export default router;

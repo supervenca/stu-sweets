@@ -166,17 +166,19 @@ const CategoriesPage = () => {
       </Title>
 
       {/* CREATE */}
-      <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
-        <Col xs={24} sm={18} >
+      <Row gutter={[8, 8]} wrap={isMobile} style={{ marginBottom: 16, alignItems: "center" }}>
+        <Col flex={isMobile ? "100%" : "320px"}>
           <Input
             placeholder="Category name"
+            style={{ width: "100%" }}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
         </Col>
-        <Col xs={24} sm={6}>
+        <Col flex={isMobile ? "100%" : "none"}>
           <Button
             type="primary"
+            block={isMobile}
             onClick={handleCreate}
             disabled={isAddDisabled}
           >

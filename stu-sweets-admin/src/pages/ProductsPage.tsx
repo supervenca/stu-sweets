@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Row, Col, Table, Input, Button, Space, Select, Popconfirm, Typography, InputNumber, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 
+import type { Product } from "../stores/products.store";
 import { useProductsStore } from "../stores/products.store";
 import { useCategoriesStore } from "../stores/categories.store";
 
@@ -9,18 +10,6 @@ import { useResponsive, TABLE_CONFIG } from "../shared/responsive";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
-
-type Product = {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  categoryId: number | null;
-  category?: {
-    id: number;
-    name: string;
-  };
-};
 
 const ProductsPage = () => {
   const { isMobile, isTablet } = useResponsive();
@@ -76,7 +65,7 @@ const ProductsPage = () => {
         name: name.trim(),
         price,
         categoryId,
-        description: description.trim(),
+        description: description.trim()
       });
 
       message.success({ content: "Product added!", key });
@@ -103,7 +92,7 @@ const ProductsPage = () => {
         ...editingData,
         name: editingData.name.trim(),
         description: editingData.description.trim(),
-        price: Number(editingData.price),
+        price: Number(editingData.price)
       });
 
       message.success({ content: "Updated!", key });

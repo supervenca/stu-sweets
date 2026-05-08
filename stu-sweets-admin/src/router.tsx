@@ -9,6 +9,7 @@ import CategoriesPage from "./pages/CategoriesPage";
 import AdminLayout from "./components/AdminLayout";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import ClientsPage from "./pages/ClientsPage";
+import BestsellersPage from "./pages/BestsellersPage";
 
 const router = createBrowserRouter([
   {
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
           { path: "orders", element: <OrdersPage /> },
           { path: "products", element: <ProductsPage /> },
           { path: "categories", element: <CategoriesPage /> },
+          { path: "bestsellers", element: <BestsellersPage /> },
           { path: "clients", element: <ClientsPage /> },
         ],
       },
