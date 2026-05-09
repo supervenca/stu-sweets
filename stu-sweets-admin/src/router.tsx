@@ -6,10 +6,12 @@ import UsersPage from "./pages/UsersPage";
 import OrdersPage from "./pages/OrdersPage";
 import ProductsPage from "./pages/ProductsPage";
 import CategoriesPage from "./pages/CategoriesPage";
+import SubCategoriesPage from "./pages/SubCategoriesPage";
 import AdminLayout from "./components/AdminLayout";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import ClientsPage from "./pages/ClientsPage";
 import BestsellersPage from "./pages/BestsellersPage";
+import CartRecommendationPage from "./pages/CartRecommendationPage";
 
 const router = createBrowserRouter([
   {
@@ -28,8 +30,10 @@ const router = createBrowserRouter([
           { path: "orders", element: <OrdersPage /> },
           { path: "products", element: <ProductsPage /> },
           { path: "categories", element: <CategoriesPage /> },
+          { path: "subcategories", element: <SubCategoriesPage /> },
           { path: "bestsellers", element: <BestsellersPage /> },
-          { path: "clients", element: <ClientsPage /> },
+          { path: "cart-recommendations", element: <CartRecommendationPage /> },
+          { path: "clients", element: <ClientsPage /> }
         ],
       },
     ],

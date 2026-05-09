@@ -123,8 +123,7 @@ const ProductsPage = () => {
   const columns: ColumnsType<Product> = [
     {
       title: "ID",
-      dataIndex: "id",
-      width: 70,
+      dataIndex: "id"
     },
     {
       title: "Name",
@@ -320,7 +319,7 @@ const ProductsPage = () => {
         dataSource={products}
         columns={columns}
         loading={loading}
-        scroll={{ x: tableConfig.scrollX }}
+        scroll={isMobile ? { x: 800 } : undefined}
         size={tableConfig.size}
         pagination={{ pageSize: tableConfig.pageSize }}
       />

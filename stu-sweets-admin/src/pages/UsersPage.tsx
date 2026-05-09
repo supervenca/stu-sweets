@@ -7,7 +7,7 @@ import type { User } from "../stores/users.store";
 
 import { TABLE_CONFIG, useResponsive } from "../shared/responsive";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 type Role = "ADMIN" | "SUPER_ADMIN";
 
@@ -18,7 +18,7 @@ const UsersPage = () => {
     createUser,
     updateUser,
     deleteUser,
-    loading,
+    loading
   } = useUsersStore();
 
   const [email, setEmail] = useState("");
@@ -112,11 +112,11 @@ const UsersPage = () => {
     {
       title: "ID",
       dataIndex: "id",
-      width: 70,
+      
     },
     {
       title: "Email",
-      width: 200,
+      dataIndex: "email",
       render: (_, record) =>
         editingId === record.id ? (
           <Input
@@ -129,7 +129,6 @@ const UsersPage = () => {
     },
     {
       title: "Password",
-      width: 150,
       render: (_, record) =>
         editingId === record.id ? (
           <Input.Password
@@ -143,7 +142,6 @@ const UsersPage = () => {
     },
     {
       title: "Role",
-      width: 150,
       render: (_, record) =>
         editingId === record.id ? (
           <Select
@@ -210,7 +208,7 @@ const UsersPage = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <Title level={3}>Users</Title>
+      <Title level={3}>Users <Text type="secondary">({users.length})</Text></Title>
 
       {/* CREATE */}
       <Row gutter={[8, 8]} wrap style={{ marginBottom: 16 }}>
@@ -253,7 +251,7 @@ const UsersPage = () => {
         columns={columns}
         dataSource={users}
         loading={loading}
-        scroll={{ x: tableConfig.scrollX }}
+        scroll={isMobile ? { x: 800 } : undefined}
         size={tableConfig.size}
         pagination={{ pageSize: tableConfig.pageSize }}
       />

@@ -3,9 +3,9 @@ import { Row, Col, Table, Select, Button, Typography, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useProductsStore } from "../stores/products.store";
 import type { Product } from "../stores/products.store";
-import { TABLE_CONFIG, useResponsive } from "../shared/responsive";
+import { TABLE_CONFIG, tableCellStyle, useResponsive } from "../shared/responsive";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const BestsellersPage = () => {
 
@@ -40,14 +40,20 @@ const BestsellersPage = () => {
     {
       title: "Name",
       dataIndex: "name",
+      onCell: () => ({
+        style: tableCellStyle,
+      })
     },
     {
       title: "Price (€)",
-      dataIndex: "price",
+      dataIndex: "price"
     },
     {
       title: "Category",
       render: (_, record) => record.category?.name,
+      onCell: () => ({
+        style: tableCellStyle,
+      }),
     },
     {
       title: "Status",
@@ -70,7 +76,7 @@ const BestsellersPage = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <Title level={3}>Bestsellers</Title>
+      <Title level={3}>Bestsellers <Text type="secondary">({bestsellers.length})</Text></Title>
 
       {/* ADD SECTION */}
        <Row gutter={[8, 8]} wrap={isMobile} style={{ marginBottom: 16, alignItems: "center" }}>
@@ -109,7 +115,7 @@ const BestsellersPage = () => {
         columns={columns}
         dataSource={bestsellers}
         loading={loading}
-        scroll={{ x: tableConfig.scrollX }}
+        scroll={isMobile ? { x: 800 } : undefined}
         size={tableConfig.size}
         pagination={{ pageSize: tableConfig.pageSize }}
       />

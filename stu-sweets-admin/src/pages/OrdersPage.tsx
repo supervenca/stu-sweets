@@ -305,7 +305,7 @@ const OrdersPage = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <Title level={3}>Orders ({orders.length})</Title>
+      <Title level={3}>Orders <Text type="secondary">({orders.length})</Text></Title>
 
       <Table
         rowKey="id"

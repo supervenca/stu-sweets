@@ -5,39 +5,60 @@ import { Decimal } from "@prisma/client/runtime/library.js";
 
 export async function getAllProducts() {
   return prisma.product.findMany({
-  include: {category: true}
+  include: {
+    category: true,
+    subCategory: true
+  }
   });
 }
 
 export async function getProductById(id: number) {
   return prisma.product.findUnique({ 
     where: { id },
-    include: {category: true}
+    include: {
+      category: true, 
+      subCategory: true
+    }
    });
 }
 
 export async function createProduct(data: CreateProductDto) {
-  const categoryIdInt = data.categoryId != null ? parseInt(data.categoryId as any, 10) : null;
 
+  if (data.subCategoryId) {
+    const subCategory = await prisma.subCategory.findUnique({
+      where: { id: data.subCategoryId },
+    });
+
+    if (!subCategory || subCategory.categoryId !== data.categoryId) {
+      throw new Error("Invalid subcategory for selected category");
+    }
+  }
   return prisma.product.create({
     data: {
       name: data.name,
       description: data.description,
       price: new Decimal(data.price),
       stock: data.stock ?? 0,
-      categoryId: categoryIdInt,
+      categoryId: data.categoryId,
+      subCategoryId: data.subCategoryId
     },
-    include: { category: true },
+    include: { 
+      category: true,
+      subCategory: true
+    },
   });
 }
 
 export async function updateProduct(id: number, data: UpdateProductDto) {
-  const categoryIdInt =
-    data.categoryId !== undefined
-      ? data.categoryId === null
-        ? null
-        : parseInt(data.categoryId as any, 10)
-      : undefined;
+
+  if (data.subCategoryId) {
+    const subCategory = await prisma.subCategory.findUnique({
+      where: { id: data.subCategoryId },
+    });
+    if (!subCategory || subCategory.categoryId !== data.categoryId) {
+      throw new Error("Invalid subcategory for selected category");
+    }
+  }
 
   return prisma.product.update({
     where: { id },
@@ -58,8 +79,12 @@ export async function updateProduct(id: number, data: UpdateProductDto) {
     stock: data.stock,
   }),
 
-  ...(categoryIdInt !== undefined && {
-    categoryId: categoryIdInt,
+  ...(data.categoryId !== undefined && {
+    categoryId: data.categoryId,
+  }),
+
+  ...(data.subCategoryId !== undefined && {
+    subCategoryId: data.subCategoryId,
   }),
 
   ...(data.isBestseller !== undefined && {
@@ -70,7 +95,7 @@ export async function updateProduct(id: number, data: UpdateProductDto) {
     isCartRecommendation: data.isCartRecommendation,
   }),
 },
-    include: { category: true },
+    include: { category: true, subCategory: true },
   });
 }
 

@@ -31,9 +31,20 @@ model User {
 }
 
 model Category {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique
-  products Product[] @relation("ProductToCategory")
+  id              Int       @id @default(autoincrement())
+  name            String    @unique
+  products        Product[] @relation("ProductToCategory")
+  subcategories   SubCategory[]
+}
+
+model SubCategory {
+  id          Int       @id @default(autoincrement())
+  name        String
+
+  categoryId  Int
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  products    Product[]
 }
 
 model Product {
@@ -43,8 +54,12 @@ model Product {
   price       Decimal     @db.Decimal(10, 2)
   stock       Int         @default(0)
   createdAt   DateTime    @default(now())
+  
   categoryId  Int?
   category    Category?   @relation("ProductToCategory", fields: [categoryId], references: [id])
+
+  subCategoryId        Int?
+  subCategory          SubCategory?  @relation(fields: [subCategoryId], references: [id])
   
   orderItems  OrderItem[]
 
@@ -71,7 +86,6 @@ model CakeOption {
   orderItem   OrderItem @relation("OrderItemToCakeOption", fields: [orderItemId], references: [id], onDelete: Cascade)
 }
 
-// Order и Invoice с явной связью
 model Order {
   id            Int         @id @default(autoincrement())
   customerName  String

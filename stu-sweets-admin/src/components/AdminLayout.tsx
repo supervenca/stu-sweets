@@ -1,13 +1,15 @@
 import { Layout, Menu, Typography, Button, Space } from "antd";
 import {
   DashboardOutlined,
+  ShoppingOutlined,
   ShoppingCartOutlined,
-  AppstoreOutlined,
+  GiftOutlined,
   TagsOutlined,
   UserOutlined,
   TeamOutlined,
   LogoutOutlined,
   StarOutlined,
+  ClusterOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../auth/auth.store";
@@ -29,12 +31,12 @@ const AdminLayout = () => {
     },
     {
       key: "/orders",
-      icon: <ShoppingCartOutlined />,
+      icon: <ShoppingOutlined />,
       label: "Orders",
     },
     {
       key: "/products",
-      icon: <AppstoreOutlined />,
+      icon: <GiftOutlined />,
       label: "Products",
     },
     {
@@ -43,9 +45,19 @@ const AdminLayout = () => {
       label: "Categories",
     },
     {
+      key: "/subcategories",
+      icon: <ClusterOutlined />,
+      label: "Sub-Categories",
+    },
+    {
       key: "/bestsellers",
       icon: <StarOutlined />,
       label: "Bestsellers",
+    },
+    {
+      key: "/cart-recommendations",
+      icon: <ShoppingCartOutlined />,
+      label: "Don't forget to buy",
     },
     {
       key: "/clients",

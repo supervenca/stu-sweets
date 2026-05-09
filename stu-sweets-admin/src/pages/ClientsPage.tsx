@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Table, Button, Tag, Space, Select, Input } from "antd";
+import { Table, Button, Tag, Space, Select, Input, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
 
 import { useClientsStore, type Client } from "../stores/clients.store";
@@ -7,6 +7,7 @@ import { useClientsStore, type Client } from "../stores/clients.store";
 import { useResponsive, TABLE_CONFIG } from "../shared/responsive";
 
 const { Option } = Select;
+const { Title, Text } = Typography;
 
 export default function ClientsPage() {
   const {
@@ -15,6 +16,7 @@ export default function ClientsPage() {
     toggleBlacklist,
     loading,
     filter,
+    error,
     setFilter,
   } = useClientsStore();
 
@@ -119,9 +121,11 @@ export default function ClientsPage() {
     },
   ];
 
+  if (error) return <Text type="danger">{error}</Text>;
+
   return (
     <div style={{ padding: 20 }}>
-      <h2>Clients</h2>
+      <Title level={3}>Clients <Text type="secondary">({clients.length})</Text></Title>
 
       {/* FILTER */}
       <Space style={{ marginBottom: 16 }}>
@@ -151,7 +155,7 @@ export default function ClientsPage() {
         columns={columns}
         dataSource={filteredClients}
         loading={loading}
-        scroll={{ x: tableConfig.scrollX }}
+        scroll={isMobile ? { x: 800 } : undefined}
         size={tableConfig.size}
         pagination={{ pageSize: tableConfig.pageSize }}
       />

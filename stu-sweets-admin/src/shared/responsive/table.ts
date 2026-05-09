@@ -15,3 +15,9 @@ export const TABLE_CONFIG = {
     pageSize: 10,
   },
 };
+
+export const tableCellStyle = {
+  whiteSpace: "normal" as const,
+  wordBreak: "break-word" as const,
+  verticalAlign: "top" as const,
+};

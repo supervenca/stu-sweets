@@ -4,7 +4,7 @@ import { useCategoriesStore, type Category } from "../stores/categories.store";
 import { Row, Col, Table, Input, Button, Space, Popconfirm, Typography, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 
-import { TABLE_CONFIG, useResponsive } from "../shared/responsive";
+import { TABLE_CONFIG, tableCellStyle, useResponsive } from "../shared/responsive";
 
 const { Title, Text } = Typography;
 
@@ -92,12 +92,13 @@ const CategoriesPage = () => {
   const columns: ColumnsType<Category> = [
     {
       title: "ID",
-      dataIndex: "id",
-      width: 80,
+      dataIndex: "id"
     },
     {
       title: "Name",
-      width: isMobile ? 100 : 300,
+      onCell: () => ({
+        style: tableCellStyle,
+      }),
       render: (_, record) =>
         editingId === record.id ? (
           <Input
@@ -111,7 +112,6 @@ const CategoriesPage = () => {
     },
     {
       title: "Actions",
-      width: isMobile ? 120 : 220,
       render: (_, record) =>
         editingId === record.id ? (
           <Space direction={isMobile ? "vertical" : "horizontal"}>
@@ -193,7 +193,7 @@ const CategoriesPage = () => {
         dataSource={categories}
         columns={columns}
         loading={loading}
-        scroll={{ x: isMobile ? 500 : 700 }}
+        scroll={isMobile ? { x: 300 } : undefined}
         size={tableConfig.size}
         pagination={{ pageSize: tableConfig.pageSize }}
         tableLayout="auto"
