@@ -5,6 +5,7 @@ import type { ColumnsType } from "antd/es/table";
 import type { Product } from "../stores/products.store";
 import { useProductsStore } from "../stores/products.store";
 import { useCategoriesStore } from "../stores/categories.store";
+import { useSubCategoriesStore } from "../stores/subCategories.store";
 
 import { useResponsive, TABLE_CONFIG } from "../shared/responsive";
 
@@ -31,11 +32,13 @@ const ProductsPage = () => {
   } = useProductsStore();
 
   const { categories, fetchCategories } = useCategoriesStore();
+  const { subCategories, fetchSubCategories } = useSubCategoriesStore();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [subCategoryId, setSubCategoryId] = useState<number | null>(null);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingData, setEditingData] = useState({
@@ -43,6 +46,7 @@ const ProductsPage = () => {
     price: 0,
     description: "",
     categoryId: null as number | null,
+    subCategoryId: null as number | null,
   });
 
   const [pendingId, setPendingId] = useState<number | null>(null);
@@ -50,7 +54,8 @@ const ProductsPage = () => {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
-  }, [fetchProducts, fetchCategories]);
+    fetchSubCategories();
+  }, [fetchProducts, fetchCategories, fetchSubCategories]);
 
   // CREATE
   const handleCreate = async () => {
@@ -65,6 +70,7 @@ const ProductsPage = () => {
         name: name.trim(),
         price,
         categoryId,
+        subCategoryId,
         description: description.trim()
       });
 
@@ -74,6 +80,7 @@ const ProductsPage = () => {
       setDescription("");
       setPrice(null);
       setCategoryId(null);
+      setSubCategoryId(null);
     } catch {
       message.error({ content: "Failed to add product", key });
     }
@@ -190,6 +197,7 @@ const ProductsPage = () => {
               setEditingData((prev) => ({
                 ...prev,
                 categoryId: value ?? null,
+                subCategoryId: null,
               }))
             }
             allowClear
@@ -202,6 +210,34 @@ const ProductsPage = () => {
           </Select>
         ) : (
           record.category?.name ?? "—"
+        ),
+    },
+    {
+      title: "Sub-Category",
+      render: (_, record) =>
+        editingId === record.id ? (
+          <Select
+            value={editingData.subCategoryId ?? undefined}
+            style={{ width: 150 }}
+            onChange={(value) =>
+              setEditingData((prev) => ({
+                ...prev,
+                subCategoryId: value ?? null,
+              }))
+            }
+            allowClear
+            disabled={!editingData.categoryId}
+          >
+            {subCategories
+              .filter((sc) => sc.categoryId === editingData.categoryId)
+              .map((sc) => (
+                <Select.Option key={sc.id} value={sc.id}>
+                  {sc.name}
+                </Select.Option>
+            ))}
+        </Select>
+        ) : (
+          record.subCategory?.name ?? "—"
         ),
     },
     {
@@ -228,6 +264,7 @@ const ProductsPage = () => {
                   price: record.price,
                   description: record.description,
                   categoryId: record.categoryId,
+                  subCategoryId: record.subCategoryId ?? null,
                 });
               }}
             >
@@ -290,7 +327,10 @@ const ProductsPage = () => {
           <Select
             placeholder="Category"
             value={categoryId ?? undefined}
-            onChange={(v) => setCategoryId(v ?? null)}
+            onChange={(v) => {
+              setCategoryId(v ?? null);
+              setSubCategoryId(null);
+            }}
             allowClear
             style={{ width: "100%" }}
           >
@@ -298,6 +338,25 @@ const ProductsPage = () => {
               <Select.Option key={c.id} value={c.id}>
                 {c.name}
               </Select.Option>
+            ))}
+          </Select>
+        </Col>
+
+        <Col xs={24} sm={24} md={12} lg={5}>
+          <Select
+            placeholder="Subcategory"
+            value={subCategoryId ?? undefined}
+            onChange={(v) => setSubCategoryId(v ?? null)}
+            allowClear
+            style={{ width: "100%" }}
+            disabled={!categoryId}
+          >
+            {subCategories
+              .filter((sc) => sc.categoryId === categoryId)
+              .map((sc) => (
+                <Select.Option key={sc.id} value={sc.id}>
+                  {sc.name}
+                </Select.Option>
             ))}
           </Select>
         </Col>

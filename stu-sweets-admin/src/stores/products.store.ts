@@ -12,6 +12,11 @@ export type Product = {
     id: number;
     name: string;
   };
+  subCategoryId?: number | null;
+  subCategory?: {
+    id: number;
+    name: string;
+  };
   isBestseller?: boolean;
   isCartRecommendation?: boolean;
 };
@@ -22,6 +27,7 @@ type CreateProductDto = {
   stock?: number;
   description: string;
   categoryId: number | null;
+  subCategoryId?: number | null;
   isBestseller?: boolean;
   isCartRecommendation?: boolean;
   };
