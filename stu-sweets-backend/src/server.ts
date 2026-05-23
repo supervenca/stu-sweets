@@ -15,6 +15,9 @@ import categoriesInternalRoutes from "./routes/categories.internal.routes.js";
 import subCategoriesRoutes from "./routes/subCategories.routes.js";
 import subCategoriesInternalRoutes from "./routes/subCategories.internal.routes.js";
 import clientsRoutes from "./routes/clients.routes.js";
+import internalPickupRoutes from "./routes/internalPickup.routes.js";
+import pickupRoutes from "./routes/pickup.routes.js";
+
 import authRoutes from "./routes/auth.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 
@@ -44,7 +47,8 @@ app.use("/internal/categories", categoriesInternalRoutes);
 app.use("/sub-categories", subCategoriesRoutes);
 app.use("/internal/sub-categories", subCategoriesInternalRoutes);
 app.use("/internal/clients", clientsRoutes);
-
+app.use("/internal/pickup", internalPickupRoutes);
+app.use("/pickup", pickupRoutes);
 app.use("/auth", authRoutes);
 
 app.use(errorMiddleware);

@@ -10,6 +10,7 @@ export interface CreateOrderDto {
   customerPhone?: string;
   comment?: string;
   items: OrderItemDto[];
+  pickupDate: string; // ISO date
 }
 
 export interface UpdateOrderDto {

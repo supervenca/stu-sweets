@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
 import prisma from "../prisma/client.js";
+import {
+  createCategorySchema,
+  updateCategorySchema,
+} from "../schemas/category.schema.js";
 
 export const getCategories = async (_req: Request, res: Response) => {
   const categories = await prisma.category.findMany({
@@ -10,15 +14,20 @@ export const getCategories = async (_req: Request, res: Response) => {
 };
 
 export const createCategory = async (req: Request, res: Response) => {
-  const { name } = req.body;
 
-  if (!name) {
-    return res.status(400).json({ message: "Name is required" });
+  const parseResult = createCategorySchema.safeParse(req.body);
+
+  if (!parseResult.success) {
+    return res.status(400).json({
+      message: parseResult.error.message,
+    });
   }
+
+  const { name, requiresPickupSlot = false } = parseResult.data;
 
   try {
     const category = await prisma.category.create({
-      data: { name },
+      data: { name, requiresPickupSlot },
     });
 
     res.status(201).json(category);
@@ -33,16 +42,31 @@ export const createCategory = async (req: Request, res: Response) => {
 
 export const updateCategory = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
-  const { name } = req.body;
 
-  if (!name) {
-    return res.status(400).json({ message: "Name is required" });
+  const parseResult = updateCategorySchema.safeParse(
+    req.body
+  );
+
+  if (!parseResult.success) {
+    return res.status(400).json({
+      message: parseResult.error.message,
+    });
   }
+
+  const data = parseResult.data;
+
+  // защита от пустого PATCH
+  if (Object.keys(data).length === 0) {
+    return res.status(400).json({
+      message: "Request body cannot be empty",
+    });
+  }
+
 
   try {
     const category = await prisma.category.update({
       where: { id },
-      data: { name },
+      data,
     });
 
     res.json(category);

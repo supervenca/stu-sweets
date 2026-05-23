@@ -21,6 +21,7 @@ export const createOrderSchema = z.object({
   }, "Phone must have at least 10 digits"),
   comment: z.string().optional(),
   items: z.array(orderItemSchema).min(1, "At least one item is required"),
+  pickupDate: z.string().datetime()
 }).strict();
 
 // Схема для обновления заказа (например, изменение статуса)

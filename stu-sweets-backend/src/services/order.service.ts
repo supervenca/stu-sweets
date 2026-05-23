@@ -1,6 +1,7 @@
 import prisma from "../prisma/client.js";
 import { CreateOrderDto, UpdateOrderDto, OrderItemDto } from "../types/order.js";
 import { HttpError } from "../utils/httpError.js";
+import { validatePickupDate } from "./pickup.service.js";
 
 export async function getAllOrders() {
   const orders = await prisma.order.findMany({
@@ -35,28 +36,53 @@ export async function getOrderById(id: number) {
 
 export async function createOrder(data: CreateOrderDto) {
   return prisma.$transaction(async (tx) => {
+
+    const date = new Date(data.pickupDate);
+  
     // Получаем продукты из БД, чтобы подставить цены при необходимости
     const productIds = data.items.map((i) => i.productId);
     const products = await tx.product.findMany({
       where: { id: { in: productIds } },
+      include: { category: true },
     });
     const productsMap = new Map(products.map((p) => [p.id, p]));
 
-    // Формируем items с гарантированным price
+    // считаем количество тортов в новом заказе
+    let newCakeQuantity = 0;
+
     const itemsData = data.items.map((i) => {
       const product = productsMap.get(i.productId);
-      if (!product) throw new HttpError(404, `Product ${i.productId} not found`);
+
+      if (!product) {
+        throw new HttpError(404, `Product ${i.productId} not found`);
+      }
+
+      if (product.category?.requiresPickupSlot) {
+        newCakeQuantity += i.quantity;
+      }
+
       return {
         productId: i.productId,
         quantity: i.quantity,
-        price: i.price ?? product.price, // если price не передан, берем цену из продукта
+        price: i.price ?? product.price,
       };
     });
+    // проверка pickup date лимита
+    await validatePickupDate(date, newCakeQuantity);
+
+    // ищем слот
+    const slot = await tx.pickupSlot.findUnique({
+      where: { date },
+    });
+
+    if (newCakeQuantity > 0 && !slot) {
+      throw new HttpError(400, "Pickup slot not found");
+    }
 
     // Считаем total
     const total = itemsData.reduce((sum, i) => sum + (typeof i.price === 'number' ? i.price : i.price.toNumber()) * i.quantity, 0);
 
-    // ИЩЕМ КЛИЕНТА
+    // ищем клиента
     let client = await tx.client.findFirst({
       where: {
         customerEmail: data.customerEmail,
@@ -68,7 +94,7 @@ export async function createOrder(data: CreateOrderDto) {
       throw new HttpError(403, "Client is blacklisted");
     }
 
-    // ЕСЛИ КЛИЕНТА НЕТ — СОЗДАЁМ
+    // если клиента нет - создаем
     if (!client) {
       client = await tx.client.create({
         data: {
@@ -87,18 +113,25 @@ export async function createOrder(data: CreateOrderDto) {
         },
       });
     }
-
+    // ФИНАЛ: создание заказа
     const order = await tx.order.create({
       data: {
         customerName: data.customerName,
         customerEmail: data.customerEmail,
         customerPhone: data.customerPhone ?? null,
         comment: data.comment ?? null,
+        pickupSlotId: slot?.id ?? null,
         total,
         clientId: client.id, // связь с таблицей Client
         items: { create: itemsData },
       },
-      include: { items: { include: { product: true } } },
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
     });
 
     return order;
@@ -131,7 +164,7 @@ export async function deleteOrder(id: number) {
   }
 }
 
-/** Добавить товар в заказ */
+//Добавить товар в заказ
 export async function addOrderItem(orderId: number, item: OrderItemDto) {
   const product = await prisma.product.findUnique({ where: { id: item.productId } });
   if (!product) throw new HttpError(404, "Product not found");
@@ -173,7 +206,7 @@ export async function addOrderItem(orderId: number, item: OrderItemDto) {
   });
 }
 
-/** Обновить товар в заказе */
+//Обновить товар в заказе
 export async function updateOrderItem(orderId: number, itemId: number, data: Partial<OrderItemDto>) {
   const item = await prisma.orderItem.findUnique({ where: { id: itemId } });
   if (!item || item.orderId !== orderId) throw new HttpError(404, "Order item not found");
@@ -197,7 +230,7 @@ export async function updateOrderItem(orderId: number, itemId: number, data: Par
   });
 }
 
-/** Удалить товар из заказа */
+//Удалить товар из заказа
 export async function deleteOrderItem(orderId: number, itemId: number) {
   const item = await prisma.orderItem.findUnique({ where: { id: itemId } });
   if (!item || item.orderId !== orderId) throw new HttpError(404, "Order item not found");
@@ -209,7 +242,7 @@ export async function deleteOrderItem(orderId: number, itemId: number) {
   });
 }
 
-/** Пересчет total заказа */
+//Пересчет total заказа
 async function recalculateOrderTotal(tx: any, orderId: number) {
   const items = await tx.orderItem.findMany({ where: { orderId } });
   const total = items.reduce((sum: number, i: any) => sum + i.price * i.quantity, 0);
