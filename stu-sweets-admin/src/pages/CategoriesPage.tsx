@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCategoriesStore, type Category } from "../stores/categories.store";
 
-import { Row, Col, Table, Input, Button, Space, Popconfirm, Typography, message } from "antd";
+import { Row, Col, Table, Input, Button, Space, Popconfirm, Typography, message, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 
 import { TABLE_CONFIG, tableCellStyle, useResponsive } from "../shared/responsive";
@@ -16,13 +16,16 @@ const CategoriesPage = () => {
     fetchCategories,
     createCategory,
     updateCategory,
-    deleteCategory,
+    deleteCategory
   } = useCategoriesStore();
 
   const [name, setName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
   const [pendingId, setPendingId] = useState<number | null>(null);
+  const [requiresPickupSlot, setRequiresPickupSlot] = useState(false);
+  const [editingRequiresPickupSlot, setEditingRequiresPickupSlot] =
+  useState<boolean>(false);
 
   const isAddDisabled = !name.trim();
   const isSaveDisabled = !editingName.trim();
@@ -47,34 +50,39 @@ const CategoriesPage = () => {
     message.loading({ content: "Creating...", key });
 
     try {
-      await createCategory(name);
+      await createCategory(name, requiresPickupSlot);
       message.success({ content: "Category created", key });
       setName("");
+      setRequiresPickupSlot(false);
     } catch {
       message.error({ content: "Failed to create category", key });
     }
   };
 
   const handleSave = async (id: number) => {
-    if (!editingName.trim()) return;
+  if (!editingName.trim()) return;
 
-    setPendingId(id);
+  setPendingId(id);
 
-    const key = "update-category";
+  const key = "update-category";
 
-    message.loading({ content: "Saving...", key });
+  message.loading({ content: "Saving...", key });
 
-    try {
-      await updateCategory(id, editingName);
-      message.success({ content: "Category updated", key });
+  try {
+    await updateCategory(id, {
+      name: editingName,
+      requiresPickupSlot: editingRequiresPickupSlot,
+    });
 
-      setEditingId(null);
-    } catch {
-      message.error({ content: "Failed to update category", key });
-    }
+    message.success({ content: "Category updated", key });
 
-    setPendingId(null);
-  };
+    setEditingId(null);
+  } catch {
+    message.error({ content: "Failed to update category", key });
+  }
+
+  setPendingId(null);
+};
 
   const handleDelete = async (id: number) => {
     const key = "delete-category";
@@ -111,6 +119,30 @@ const CategoriesPage = () => {
         ),
     },
     {
+      title: "Pick-up Calendar",
+      dataIndex: "requiresPickupSlot",
+      render: (value, record) =>
+        editingId === record.id ? (
+          <Select
+            value={editingRequiresPickupSlot}
+            onChange={setEditingRequiresPickupSlot}
+            style={{ width: 160 }}
+          >
+            <Select.Option value={true}>
+              Required
+            </Select.Option>
+
+            <Select.Option value={false}>
+              Not Required
+            </Select.Option>
+          </Select>
+        ) : value ? (
+          "Required"
+        ) : (
+          "Not Required"
+        ),
+    },
+    {
       title: "Actions",
       render: (_, record) =>
         editingId === record.id ? (
@@ -127,6 +159,7 @@ const CategoriesPage = () => {
               onClick={() => {
                 setEditingId(null);
                 setEditingName("");
+                setEditingRequiresPickupSlot(false);
               }}
             >
               Cancel
@@ -138,6 +171,7 @@ const CategoriesPage = () => {
               onClick={() => {
                 setEditingId(record.id);
                 setEditingName(record.name);
+                setEditingRequiresPickupSlot(record.requiresPickupSlot);
               }}
             >
               Edit
@@ -174,6 +208,21 @@ const CategoriesPage = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+        </Col>
+        <Col flex={isMobile ? "100%" : "320px"}>
+          <Select
+            value={requiresPickupSlot}
+            onChange={setRequiresPickupSlot}
+            style={{ width: "100%" }}
+          >
+            <Select.Option value={true}>
+              Pick-up Calendar: Required
+            </Select.Option>
+
+            <Select.Option value={false}>
+              Pick-up Calendar: Not Required
+            </Select.Option>
+          </Select>
         </Col>
         <Col flex={isMobile ? "100%" : "none"}>
           <Button

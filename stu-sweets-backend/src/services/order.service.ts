@@ -36,53 +36,91 @@ export async function getOrderById(id: number) {
 
 export async function createOrder(data: CreateOrderDto) {
   return prisma.$transaction(async (tx) => {
-
-    const date = new Date(data.pickupDate);
-  
-    // Получаем продукты из БД, чтобы подставить цены при необходимости
+    // Получаем продукты из БД
     const productIds = data.items.map((i) => i.productId);
+
     const products = await tx.product.findMany({
-      where: { id: { in: productIds } },
-      include: { category: true },
+      where: {
+        id: {
+          in: productIds,
+        },
+      },
+      include: {
+        category: true,
+      },
     });
+
     const productsMap = new Map(products.map((p) => [p.id, p]));
 
-    // считаем количество тортов в новом заказе
-    let newCakeQuantity = 0;
-
-    const itemsData = data.items.map((i) => {
-      const product = productsMap.get(i.productId);
+    // Проверяем items и формируем данные для заказа
+    const itemsData = data.items.map((item) => {
+      const product = productsMap.get(item.productId);
 
       if (!product) {
-        throw new HttpError(404, `Product ${i.productId} not found`);
-      }
-
-      if (product.category?.requiresPickupSlot) {
-        newCakeQuantity += i.quantity;
+        throw new HttpError(404, `Product ${item.productId} not found`);
       }
 
       return {
-        productId: i.productId,
-        quantity: i.quantity,
-        price: i.price ?? product.price,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price ?? product.price,
       };
     });
-    // проверка pickup date лимита
-    await validatePickupDate(date, newCakeQuantity);
 
-    // ищем слот
-    const slot = await tx.pickupSlot.findUnique({
-      where: { date },
+    // Проверяем, есть ли товары requiring pickup
+    const pickupItems = data.items.filter((item) => {
+      const product = productsMap.get(item.productId);
+
+      return product?.category?.requiresPickupSlot;
     });
 
-    if (newCakeQuantity > 0 && !slot) {
-      throw new HttpError(400, "Pickup slot not found");
+    const totalPickupQuantity = pickupItems.reduce(
+      (sum, item) => sum + item.quantity,
+      0
+    );
+
+    const requiresPickup = totalPickupQuantity > 0;
+
+    // Pickup slot logic
+    let pickupSlotId: number | null = null;
+
+    if (requiresPickup) {
+      if (!data.pickupDate) {
+        throw new HttpError(400, "Pickup date is required");
+      }
+
+      const date = new Date(data.pickupDate);
+
+      if (isNaN(date.getTime())) {
+        throw new HttpError(400, "Invalid pickup date");
+      }
+
+      await validatePickupDate(date, totalPickupQuantity);
+
+      const slot = await tx.pickupSlot.upsert({
+        where: {
+          date,
+        },
+        update: {},
+        create: {
+          date,
+        },
+      });
+
+      pickupSlotId = slot.id;
     }
 
     // Считаем total
-    const total = itemsData.reduce((sum, i) => sum + (typeof i.price === 'number' ? i.price : i.price.toNumber()) * i.quantity, 0);
+    const total = itemsData.reduce((sum, item) => {
+      const price =
+        typeof item.price === "number"
+          ? item.price
+          : item.price.toNumber();
 
-    // ищем клиента
+      return sum + price * item.quantity;
+    }, 0);
+
+    // Ищем клиента
     let client = await tx.client.findFirst({
       where: {
         customerEmail: data.customerEmail,
@@ -94,7 +132,7 @@ export async function createOrder(data: CreateOrderDto) {
       throw new HttpError(403, "Client is blacklisted");
     }
 
-    // если клиента нет - создаем
+    // Если клиента нет — создаем
     if (!client) {
       client = await tx.client.create({
         data: {
@@ -104,28 +142,34 @@ export async function createOrder(data: CreateOrderDto) {
         },
       });
     } else {
-      // (опционально) обновляем данные клиента
+      // Обновляем данные клиента
       client = await tx.client.update({
-        where: { id: client.id },
+        where: {
+          id: client.id,
+        },
         data: {
           customerName: data.customerName,
           customerPhone: data.customerPhone,
         },
       });
     }
-    // ФИНАЛ: создание заказа
+
+    // Создание заказа
     const order = await tx.order.create({
       data: {
         customerName: data.customerName,
         customerEmail: data.customerEmail,
         customerPhone: data.customerPhone ?? null,
         comment: data.comment ?? null,
-        pickupSlotId: slot?.id ?? null,
         total,
-        clientId: client.id, // связь с таблицей Client
-        items: { create: itemsData },
+        pickupSlotId,
+        clientId: client.id,
+        items: {
+          create: itemsData,
+        },
       },
       include: {
+        pickupSlot: true,
         items: {
           include: {
             product: true,

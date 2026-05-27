@@ -5,6 +5,7 @@ import {
     getPickupCapacity, 
     getPickupSlotByDate,
     upsertPickupSlot,
+    getRemainingPickupCapacity,
     getBakerySettings,
     updateBakerySettings
 } from "../services/pickup.service.js";
@@ -60,6 +61,17 @@ export async function upsertPickupSlotController(req: Request, res: Response) {
   const slot = await upsertPickupSlot(date, data);
 
   res.json(slot);
+}
+
+export async function getRemainingPickupCapacityController(
+  req: Request,
+  res: Response
+) {
+  const date = parseDate(req.query.date as string);
+
+  const remaining = await getRemainingPickupCapacity(date);
+
+  res.json({ remaining });
 }
 
 export async function getSettingsController(req: Request, res: Response) {

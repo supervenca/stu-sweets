@@ -91,6 +91,14 @@ export async function getBookedCakes(date: Date) {
   return total;
 }
 
+//Сколько свободных мест осталось на дату
+export async function getRemainingPickupCapacity(date: Date) {
+  const capacity = await getPickupCapacity(date);
+  const booked = await getBookedCakes(date);
+
+  return Math.max(capacity - booked, 0);
+}
+
 //Проверка возможности выбрать дату
 export async function validatePickupDate(date: Date, newCakeQuantity: number) {
   const capacity = await getPickupCapacity(date);
