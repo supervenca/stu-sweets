@@ -166,9 +166,24 @@ const OrdersPage = () => {
       title: "ID",
       dataIndex: "id",
       width: 60,
+      sorter: (a, b) => a.id - b.id
+    },
+    {
+    title: "Created",
+      dataIndex: "createdAt",
+      sorter: (a, b) =>
+        new Date(a.createdAt).getTime() -
+        new Date(b.createdAt).getTime(),
+
+      defaultSortOrder: "descend",
+
+      render: (value) =>
+        new Date(value).toLocaleString(),
     },
     {
       title: "Customer",
+      sorter: (a, b) =>
+    a.customerName.localeCompare(b.customerName),
       render: (_, o) =>
         editingId === o.id ? (
           <Input
@@ -225,6 +240,16 @@ const OrdersPage = () => {
     },
     {
       title: "Status",
+      dataIndex: "status",
+      filters: [
+        { text: "Pending", value: "PENDING" },
+        { text: "Confirmed", value: "CONFIRMED" },
+        { text: "Paid", value: "PAID" },
+        { text: "Fulfilled", value: "FULFILLED" },
+        { text: "Canceled", value: "CANCELED" },
+      ],
+      //filterMultiple: false,
+      onFilter: (value, record) => record.status === value,
       render: (_, o) =>
         editingId === o.id ? (
           <Select
@@ -249,6 +274,24 @@ const OrdersPage = () => {
     {
       title: "Total",
       render: (_, o) => <b>€{o.total}</b>,
+    },
+    {
+      title: "Pick-up Date",
+      sorter: (a, b) => {
+        const aDate = a.pickupSlot?.date
+          ? new Date(a.pickupSlot.date).getTime()
+          : 0;
+
+        const bDate = b.pickupSlot?.date
+          ? new Date(b.pickupSlot.date).getTime()
+          : 0;
+
+        return aDate - bDate;
+      },
+      render: (_, o) =>
+        o.pickupSlot
+          ? new Date(o.pickupSlot.date).toLocaleDateString()
+          : "—",
     },
     {
       title: "Actions",

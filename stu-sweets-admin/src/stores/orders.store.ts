@@ -23,6 +23,10 @@ export interface Order {
   total: number;
   createdAt: string;
   items: OrderItem[];
+  pickupSlot?: {
+    id: number;
+    date: string;
+  } | null;
 }
 
 type OrdersState = {

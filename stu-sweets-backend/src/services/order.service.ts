@@ -6,6 +6,7 @@ import { validatePickupDate } from "./pickup.service.js";
 export async function getAllOrders() {
   const orders = await prisma.order.findMany({
     include: {
+      pickupSlot: true,
       items: {
         include: {
           product: true,
@@ -25,6 +26,7 @@ export async function getOrderById(id: number) {
   return prisma.order.findUnique({
     where: { id },
     include: {
+      pickupSlot: true,
       items: {
         include: {
           product: true,
