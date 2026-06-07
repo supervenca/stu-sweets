@@ -128,13 +128,27 @@ export async function upsertPickupSlot(
   });
 }
 
+//Диапазон доступных дат для отображения в календаре (по умолчанию 90 дней вперед)
+function getDateRange(daysAhead = 90) {
+  const result: Date[] = [];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let i = 0; i < daysAhead; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    result.push(d);
+  }
+
+  return result;
+}
+
 //календарь для админки
 export const getPickupCalendar = async () => {
   const settings = await prisma.bakerySettings.findFirst();
 
-  const slots = await prisma.pickupSlot.findMany({
-    orderBy: { date: "asc" },
-  });
+  const slots = await prisma.pickupSlot.findMany();
 
   const orders = await prisma.order.findMany({
     include: {
@@ -149,34 +163,66 @@ export const getPickupCalendar = async () => {
     },
   });
 
-  const map = new Map<string, number>();
+  const slotMap = new Map(
+    slots.map((s) => [s.date.toISOString().split("T")[0], s])
+  );
+
+  const bookedMap = new Map<string, number>();
 
   for (const order of orders) {
     if (!order.pickupSlot) continue;
 
-    const dateKey = order.pickupSlot.date.toISOString().split("T")[0];
+    const key = order.pickupSlot.date
+      .toISOString()
+      .split("T")[0];
 
     for (const item of order.items) {
       if (item.product.category?.requiresPickupSlot) {
-        map.set(dateKey, (map.get(dateKey) || 0) + item.quantity);
+        bookedMap.set(
+          key,
+          (bookedMap.get(key) || 0) + item.quantity
+        );
       }
     }
   }
 
-  const result = slots.map((slot) => {
-    const dateKey = slot.date.toISOString().split("T")[0];
+  const dates = getDateRange(120);
 
-    const booked = map.get(dateKey) || 0;
+  const result = dates.map((date) => {
+    const key = date.toISOString().split("T")[0];
+
+    const slot = slotMap.get(key);
+    const booked = bookedMap.get(key) || 0;
+
     const capacity =
-      slot.isAvailable === false
+      slot?.isAvailable === false
         ? 0
-        : slot.maxCakeQuantity ?? settings?.defaultDailyCakeCapacity ?? 0;
+        : slot?.maxCakeQuantity ??
+          settings?.defaultDailyCakeCapacity ??
+          0;
+
+    const minPrepDays =
+      settings?.minPreparationDays ?? 0;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diffDays =
+      (date.getTime() - today.getTime()) /
+      (1000 * 60 * 60 * 24);
+
+    const availableByPrep = diffDays >= minPrepDays;
 
     return {
-      date: dateKey,
+      date: key,
       capacity,
       booked,
-      available: capacity > booked,
+      available: availableByPrep && capacity > booked,
+      isSlotOverridden: !!slot,
+      slotCapacity: slot?.maxCakeQuantity ?? null,
+      globalCapacity: settings?.defaultDailyCakeCapacity ?? 0,
     };
   });
+
+  return result;
 };

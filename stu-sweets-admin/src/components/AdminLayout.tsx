@@ -10,6 +10,7 @@ import {
   LogoutOutlined,
   StarOutlined,
   ClusterOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../auth/auth.store";
@@ -48,6 +49,11 @@ const AdminLayout = () => {
       key: "/subcategories",
       icon: <ClusterOutlined />,
       label: "Sub-Categories",
+    },
+    {
+      key: "/calendar",
+      icon: <CalendarOutlined />,
+      label: "Calendar",
     },
     {
       key: "/bestsellers",

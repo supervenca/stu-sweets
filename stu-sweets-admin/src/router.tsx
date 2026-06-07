@@ -1,5 +1,4 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import UsersPage from "./pages/UsersPage";
@@ -12,6 +11,7 @@ import ProtectedRoute from "./auth/ProtectedRoute";
 import ClientsPage from "./pages/ClientsPage";
 import BestsellersPage from "./pages/BestsellersPage";
 import CartRecommendationPage from "./pages/CartRecommendationPage";
+import CalendarPage from "./pages/PickupCalendarPage";
 
 const router = createBrowserRouter([
   {
@@ -31,6 +31,7 @@ const router = createBrowserRouter([
           { path: "products", element: <ProductsPage /> },
           { path: "categories", element: <CategoriesPage /> },
           { path: "subcategories", element: <SubCategoriesPage /> },
+          { path: "calendar", element: <CalendarPage /> },
           { path: "bestsellers", element: <BestsellersPage /> },
           { path: "cart-recommendations", element: <CartRecommendationPage /> },
           { path: "clients", element: <ClientsPage /> }
