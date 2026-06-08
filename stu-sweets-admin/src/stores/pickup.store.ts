@@ -5,7 +5,7 @@ export type PickupDay = {
   date: string;
   capacity: number;
   booked: number;
-  available: boolean;
+  status: "AVAILABLE" | "FULL" | "UNAVAILABLE";
 };
 
 export type BakerySettings = {

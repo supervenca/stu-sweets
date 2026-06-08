@@ -14,7 +14,7 @@ import {
   Spin,
 } from "antd";
 
-import { usePickupStore } from "../stores/pickup.store";
+import { usePickupStore, type PickupDay } from "../stores/pickup.store";
 
 const { Title } = Typography;
 
@@ -79,7 +79,7 @@ const PickupCalendarPage = () => {
 
     setSelected({
       date: slot.date,
-      isAvailable: slot.available,
+      isAvailable: slot.status !== "UNAVAILABLE",
       capacity: slot.capacity,
       booked: slot.booked,
     });
@@ -122,13 +122,23 @@ const PickupCalendarPage = () => {
   }
 };
 
-  const getStatus = (booked: number, capacity: number) => {
-    if (capacity === 0) return "error";
+  const getBadgeStatus = (slot: PickupDay) => {
+    if (slot.status === "UNAVAILABLE") {
+      return "default";
+    }
 
-    const percent = booked / capacity;
+    if (slot.status === "FULL") {
+      return "error";
+    }
 
-    if (percent >= 1) return "error";
-    if (percent >= 0.8) return "warning";
+    const percent =
+      slot.capacity > 0
+        ? slot.booked / slot.capacity
+        : 0;
+
+    if (percent >= 0.7) {
+      return "warning";
+    }
 
     return "success";
   };
@@ -253,7 +263,7 @@ const PickupCalendarPage = () => {
               );
             }
 
-            const status = getStatus(slot.booked, slot.capacity);
+            const badgeStatus = getBadgeStatus(slot);
 
             return (
               <div
@@ -271,12 +281,14 @@ const PickupCalendarPage = () => {
                 }}
               >
                 <Badge
-                  status={status}
+                  status={badgeStatus}
                   text={`${slot.booked}/${slot.capacity}`}
                 />
 
                 <div style={{ fontSize: 11, opacity: 0.7 }}>
-                  {slot.available ? "Available" : "Full"}
+                  {slot.status === "AVAILABLE" && "Slots are available"}
+                  {slot.status === "FULL" && "Booking is full"}
+                  {slot.status === "UNAVAILABLE" && "Date is unavailable"}
                 </div>
               </div>
             );

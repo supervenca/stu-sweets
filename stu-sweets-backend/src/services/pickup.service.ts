@@ -103,6 +103,23 @@ export async function getRemainingPickupCapacity(date: Date) {
 export async function validatePickupDate(date: Date, newCakeQuantity: number) {
   const capacity = await getPickupCapacity(date);
   const booked = await getBookedCakes(date);
+  const settings = await getBakerySettings();
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const pickupDate = new Date(date);
+  pickupDate.setHours(0, 0, 0, 0);
+
+  const diffDays =
+    (pickupDate.getTime() - today.getTime()) /
+    (1000 * 60 * 60 * 24);
+
+  if (diffDays < settings.minPreparationDays) {
+    throw new Error(
+      `Pickup date requires at least ${settings.minPreparationDays} preparation days`
+    );
+  }
 
   if (capacity === 0) {
     throw new Error("Pickup date is unavailable");
@@ -213,11 +230,21 @@ export const getPickupCalendar = async () => {
 
     const availableByPrep = diffDays >= minPrepDays;
 
+    const isUnavailable = capacity === 0;
+    const isFull = capacity > 0 && booked >= capacity;
+    const isAvailable = capacity > booked && availableByPrep;
+
+    let status: "AVAILABLE" | "FULL" | "UNAVAILABLE";
+
+    if (isUnavailable) status = "UNAVAILABLE";
+    else if (isFull) status = "FULL";
+    else status = "AVAILABLE";
+
     return {
       date: key,
       capacity,
       booked,
-      available: availableByPrep && capacity > booked,
+      status,
       isSlotOverridden: !!slot,
       slotCapacity: slot?.maxCakeQuantity ?? null,
       globalCapacity: settings?.defaultDailyCakeCapacity ?? 0,
