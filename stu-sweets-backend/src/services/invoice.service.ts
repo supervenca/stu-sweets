@@ -1,5 +1,5 @@
 import prisma from "../prisma/client.js";
-import { Invoice, CreateInvoiceDto, UpdateInvoiceDto } from "../types/invoices.js";
+import { Invoice, CreateInvoiceDto, UpdateInvoiceDto } from "../types/invoices.types.js";
 import { HttpError } from "../utils/httpError.js";
 import { Decimal } from "@prisma/client/runtime/library.js";
 // import { generateInvoicePdf } from "../utils/invoicePdfGenerator.js";

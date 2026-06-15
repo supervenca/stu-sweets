@@ -7,7 +7,7 @@ import {
   updateInvoice,
   deleteInvoice,
 } from "../services/invoice.service.js";
-import { CreateInvoiceDto, UpdateInvoiceDto } from "../types/invoices.js";
+import { CreateInvoiceDto, UpdateInvoiceDto } from "../types/invoices.types.js";
 import { generateInvoicePdf } from "../utils/invoicePdfGenerator.js";
 import { HttpError } from "../utils/httpError.js";
 

@@ -1,5 +1,5 @@
 import PDFDocument from "pdfkit";
-import { Invoice } from "../types/invoices.js";
+import { Invoice } from "../types/invoices.types.js";
 
 export function generateInvoicePdf(invoice: Invoice): Promise<Buffer> {
   return new Promise((resolve, reject) => {

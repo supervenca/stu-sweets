@@ -19,6 +19,7 @@ type PickupState = {
   settings: BakerySettings | null;
 
   loading: boolean;
+  initialLoading: boolean;
   error: string | null;
 
   fetchCalendar: () => Promise<void>;
@@ -46,10 +47,11 @@ export const usePickupStore = create<PickupState>((set) => ({
   settings: null,
 
   loading: false,
+  initialLoading: true,
   error: null,
 
   fetchCalendar: async () => {
-    set({ loading: true });
+    set({ loading: true});
 
     try {
       const res = await api.get("/pickup/calendar");
@@ -63,11 +65,13 @@ export const usePickupStore = create<PickupState>((set) => ({
       set({
         calendar: Array.isArray(data) ? data : [],
         loading: false,
+        initialLoading: false,
       });
     } catch {
       set({
         error: "Failed to load calendar",
         loading: false,
+        initialLoading: false,
       });
     }
   },

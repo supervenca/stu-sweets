@@ -26,7 +26,7 @@ type SelectedSlot = {
 };
 
 const PickupCalendarPage = () => {
-  const { calendar, settings, loading, fetchCalendar, updateSlot, fetchSettings, updateSettings } =
+  const { calendar, settings, initialLoading, fetchCalendar, updateSlot, fetchSettings, updateSettings } =
     usePickupStore();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -49,6 +49,12 @@ const PickupCalendarPage = () => {
   useEffect(() => {
     fetchCalendar();
     fetchSettings();
+
+    const interval = setInterval(() => {
+      fetchCalendar();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, [fetchCalendar, fetchSettings]);
 
   useEffect(() => {
@@ -63,10 +69,6 @@ const PickupCalendarPage = () => {
     settings.minPreparationDays
   );
 }, [settings]);
-
-  useEffect(() => {
-    console.log("RAW CALENDAR:", calendar);
-  }, [calendar]);
 
   const openDay = (date: string) => {
     const key = normalizeDate(date);
@@ -239,7 +241,7 @@ const PickupCalendarPage = () => {
         </Space>
       </div>
 
-      {loading ? (
+      {initialLoading ? (
         <Spin />
       ) : (
         <Calendar

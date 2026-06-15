@@ -1,7 +1,10 @@
 import prisma from "../prisma/client.js";
-import { CreateProductDto, UpdateProductDto } from "../types/product.js";
+import { CreateProductDto, UpdateProductDto } from "../types/product.types.js";
+import { FileType } from "../types/file.types.js";
 import { HttpError } from "../utils/httpError.js";
 import { Decimal } from "@prisma/client/runtime/library.js";
+import { diskStorage } from "./file.storage.js";
+import { uploadFile } from "./file.service.js";
 
 export async function getAllProducts() {
   return prisma.product.findMany({
@@ -108,4 +111,48 @@ export async function deleteProduct(id: number) {
     }
     throw e;
   }
+}
+
+//product images
+
+export async function setProductImage(productId: number, url: string) {
+  return prisma.product.update({
+    where: { id: productId },
+    data: { imageUrl: url },
+  });
+}
+
+// export async function replaceProductImage(productId: number, newFile: FileType) {
+//   const product = await prisma.product.findUnique({ where: { id: productId } });
+
+//   if (product?.imageUrl) {
+//     await diskStorage.delete(product.imageUrl);
+//   }
+
+//   const newUrl = await uploadFile(newFile, "product");
+
+//   return setProductImage(productId, newUrl.url);
+// }
+
+export async function deleteProductImage(url: string) {
+  await diskStorage.delete(url);
+}
+
+export async function removeProductImageURL(
+  productId: number
+) {
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+  });
+
+  if (!product?.imageUrl) return;
+
+  await deleteProductImage(product.imageUrl);
+
+  return prisma.product.update({
+    where: { id: productId },
+    data: {
+      imageUrl: null,
+    },
+  });
 }

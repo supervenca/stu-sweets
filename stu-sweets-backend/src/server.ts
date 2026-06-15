@@ -4,18 +4,18 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 //import userRoutes from "./routes/user.routes.js";
-import internalUserRoutes from "./routes/internal.user.routes.js";
+import internalUserRoutes from "./routes/user.internal.routes.js";
 import productRoutes from "./routes/product.routes.js";
-import internalProductRoutes from "./routes/internalProduct.routes.js";
+import internalProductRoutes from "./routes/product.internal.routes.js";
 import orderRoutes from "./routes/order.routes.js";
-import internalOrderRoutes from "./routes/internalOrder.routes.js";
+import internalOrderRoutes from "./routes/order.internal.routes.js";
 //import internalInvoiceRoutes from "./routes/internalInvoice.routes.js";
 import categoriesRoutes from "./routes/categories.routes.js";
 import categoriesInternalRoutes from "./routes/categories.internal.routes.js";
 import subCategoriesRoutes from "./routes/subCategories.routes.js";
 import subCategoriesInternalRoutes from "./routes/subCategories.internal.routes.js";
 import clientsRoutes from "./routes/clients.routes.js";
-import internalPickupRoutes from "./routes/internalPickup.routes.js";
+import internalPickupRoutes from "./routes/pickup.internal.routes.js";
 import pickupRoutes from "./routes/pickup.routes.js";
 
 import authRoutes from "./routes/auth.routes.js";
@@ -50,6 +50,11 @@ app.use("/internal/clients", clientsRoutes);
 app.use("/internal/pickup", internalPickupRoutes);
 app.use("/pickup", pickupRoutes);
 app.use("/auth", authRoutes);
+
+app.use(
+  "/uploads",
+  express.static("uploads")
+);
 
 app.use(errorMiddleware);
 

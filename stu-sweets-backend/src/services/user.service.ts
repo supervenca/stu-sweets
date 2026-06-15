@@ -1,5 +1,5 @@
 import prisma from "../prisma/client.js";
-import type { CreateUserDto, UpdateUserDto } from "../types/user.js";
+import type { CreateUserDto, UpdateUserDto } from "../types/user.types.js";
 import { HttpError } from "../utils/httpError.js";
 import bcrypt from "bcrypt";
 

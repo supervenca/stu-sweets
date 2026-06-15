@@ -54,7 +54,13 @@ const OrdersPage = () => {
   useEffect(() => {
     fetchOrders();
     fetchProducts();
-  }, [fetchOrders, fetchProducts]);
+
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 10000);
+
+  return () => clearInterval(interval);
+}, [fetchOrders, fetchProducts]);
 
   // ITEMS TABLE
   const renderItemsTable = (order: Order) => {

@@ -1,5 +1,5 @@
 import prisma from "../prisma/client.js";
-import { CreateOrderDto, UpdateOrderDto, OrderItemDto } from "../types/order.js";
+import { CreateOrderDto, UpdateOrderDto, OrderItemDto } from "../types/order.types.js";
 import { HttpError } from "../utils/httpError.js";
 import { validatePickupDate } from "./pickup.service.js";
 
