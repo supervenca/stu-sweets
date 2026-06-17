@@ -11,9 +11,6 @@ stu-sweets-frontend/.env
 stu-sweets-backend/src/generated/prisma/
 stu-sweets-backend/prisma/migrations/
 
-# Docker temporary files
-docker-compose.override.yml
-
 # macOS
 .DS_Store
 

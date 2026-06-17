@@ -20,7 +20,7 @@
     "@types/pdfkit": "^0.17.5",
     "prisma": "^6.19.0",
     "ts-node-dev": "^2.0.0",
-    "tsx": "^4.21.0",
+    "tsx": "^4.22.4",
     "typescript": "^5.9.3"
   },
   "dependencies": {
@@ -30,5 +30,8 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "pdfkit": "^0.17.2"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { Row, Col, Table, Input, Button, Space, Select, Popconfirm, Typography, InputNumber, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { Upload } from "antd";
+
+
+import { productsApi } from "../api/products.api";
 
 import type { Product } from "../stores/products.store";
 import { useProductsStore } from "../stores/products.store";
@@ -8,6 +12,7 @@ import { useCategoriesStore } from "../stores/categories.store";
 import { useSubCategoriesStore } from "../stores/subCategories.store";
 
 import { useResponsive, TABLE_CONFIG } from "../shared/responsive";
+import { getImageUrl } from "../shared/utils/getImageUrl";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -126,6 +131,36 @@ const ProductsPage = () => {
     }
   };
 
+  // IMAGES
+  const handleUploadImage = async (
+  productId: number,
+  file: File
+) => {
+  try {
+    await productsApi.uploadImage(productId, file);
+
+    message.success("Image uploaded");
+
+    await fetchProducts();
+  } catch {
+    message.error("Failed to upload image");
+  }
+};
+
+const handleDeleteImage = async (
+  productId: number
+) => {
+  try {
+    await productsApi.deleteImage(productId);
+
+    message.success("Image deleted");
+
+    await fetchProducts();
+  } catch {
+    message.error("Failed to delete image");
+  }
+};
+
   // TABLE
   const columns: ColumnsType<Product> = [
     {
@@ -240,6 +275,59 @@ const ProductsPage = () => {
           record.subCategory?.name ?? "—"
         ),
     },
+    {
+  title: "Image",
+    render: (_, record) => (
+      <Space direction="vertical">
+
+        {record.imageUrl ? (
+          <>
+            <img
+              src={getImageUrl(record.imageUrl)}
+              alt={record.name}
+              style={{
+                width: 80,
+                height: 80,
+                objectFit: "cover",
+                borderRadius: 8,
+              }}
+            />
+
+            <Button
+              danger
+              size="small"
+              onClick={() =>
+                handleDeleteImage(record.id)
+              }
+            >
+              Delete image
+            </Button>
+          </>
+        ) : (
+          <Text type="secondary">
+            No image
+          </Text>
+        )}
+
+        <Upload
+          showUploadList={false}
+          beforeUpload={(file) => {
+            handleUploadImage(
+              record.id,
+              file
+            );
+
+            return false;
+          }}
+        >
+        <Button size="small">
+          Upload
+        </Button>
+      </Upload>
+
+    </Space>
+  ),
+},
     {
       title: "Actions",
       render: (_, record) =>

@@ -1,84 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PAID
-  FULFILLED
-  CANCELED
-}
-
-enum UserRole {
-  SUPER_ADMIN
-  ADMIN
-}
-
 model User {
-  id       Int      @id @default(autoincrement())
-  email    String   @unique
-  password String
-  name     String?
-  role     UserRole @default(ADMIN)
-
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
   createdAt DateTime @default(now())
+  role      UserRole @default(ADMIN)
 }
 
 model Category {
-  id              Int       @id @default(autoincrement())
-  name            String    @unique
-  products        Product[] @relation("ProductToCategory")
-  subcategories   SubCategory[]
-  requiresPickupSlot Boolean @default(false)
+  id                 Int           @id @default(autoincrement())
+  name               String        @unique
+  requiresPickupSlot Boolean       @default(false)
+  products           Product[]     @relation("ProductToCategory")
+  subcategories      SubCategory[]
 }
 
 model SubCategory {
-  id          Int       @id @default(autoincrement())
-  name        String
-
-  categoryId  Int
-  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  products    Product[]
+  id         Int       @id @default(autoincrement())
+  name       String
+  categoryId Int
+  products   Product[]
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
 
 model Product {
-  id          Int         @id @default(autoincrement())
-  name        String
-  description String?
-  price       Decimal     @db.Decimal(10, 2)
-  stock       Int         @default(0)
-  createdAt   DateTime    @default(now())
-  
-  categoryId  Int?
-  category    Category?   @relation("ProductToCategory", fields: [categoryId], references: [id])
-
+  id                   Int          @id @default(autoincrement())
+  name                 String
+  description          String?
+  price                Decimal      @db.Decimal(10, 2)
+  stock                Int          @default(0)
+  createdAt            DateTime     @default(now())
+  categoryId           Int?
+  isBestseller         Boolean      @default(false)
+  isCartRecommendation Boolean      @default(false)
   subCategoryId        Int?
-  subCategory          SubCategory?  @relation(fields: [subCategoryId], references: [id])
-  
-  orderItems  OrderItem[]
-
-  isBestseller        Boolean @default(false)
-  isCartRecommendation Boolean @default(false)
-
-  imageUrl    String?
+  imageUrl             String?
+  orderItems           OrderItem[]
+  category             Category?    @relation("ProductToCategory", fields: [categoryId], references: [id])
+  subCategory          SubCategory? @relation(fields: [subCategoryId], references: [id])
 }
 
 model OrderItem {
   id          Int          @id @default(autoincrement())
   orderId     Int
   productId   Int
-  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product     Product      @relation(fields: [productId], references: [id])
   price       Decimal      @db.Decimal(10, 2)
   quantity    Int
   cakeOptions CakeOption[] @relation("OrderItemToCakeOption")
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product      @relation(fields: [productId], references: [id])
 }
 
 model CakeOption {
@@ -91,47 +70,45 @@ model CakeOption {
 
 model Order {
   id            Int         @id @default(autoincrement())
-  customerName  String
-  customerEmail String
-  customerPhone String?
-  comment       String?
   status        OrderStatus @default(PENDING)
   total         Decimal     @db.Decimal(10, 2)
   createdAt     DateTime    @default(now())
-  items         OrderItem[]
-  invoices      Invoice[]   @relation("OrderToInvoice")
+  comment       String?
+  customerEmail String
+  customerName  String
+  customerPhone String?
   clientId      Int?
-  client        Client? @relation(fields: [clientId], references: [id])
-  
-  pickupSlotId Int?
-  pickupSlot PickupSlot? @relation(fields: [pickupSlotId], references: [id], onDelete: SetNull)
+  pickupSlotId  Int?
+  invoices      Invoice[]   @relation("OrderToInvoice")
+  client        Client?     @relation(fields: [clientId], references: [id])
+  pickupSlot    PickupSlot? @relation(fields: [pickupSlotId], references: [id])
+  items         OrderItem[]
+
   @@index([pickupSlotId])
 }
 
 model PickupSlot {
-  id                Int @id @default(autoincrement())
-  date              DateTime @unique
-  isAvailable       Boolean @default(true)
-  maxCakeQuantity   Int?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  orders Order[]
+  id              Int      @id @default(autoincrement())
+  date            DateTime @unique
+  isAvailable     Boolean  @default(true)
+  maxCakeQuantity Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  orders          Order[]
 }
 
 model BakerySettings {
-  id Int @id @default(1)
+  id                       Int @id @default(1)
   defaultDailyCakeCapacity Int @default(10)
-  minPreparationDays Int @default(2)
+  minPreparationDays       Int @default(2)
 }
 
 model Client {
-  id            Int         @id @default(autoincrement())
+  id            Int     @id @default(autoincrement())
   customerName  String
   customerEmail String
   customerPhone String?
-  blacklist     Boolean     @default(false)
-
+  blacklist     Boolean @default(false)
   orders        Order[]
 
   @@index([customerEmail])
@@ -140,10 +117,23 @@ model Client {
 model Invoice {
   id       Int      @id @default(autoincrement())
   orderId  Int
-  order    Order    @relation("OrderToInvoice", fields: [orderId], references: [id], onDelete: Cascade)
   issuedAt DateTime @default(now())
   paid     Boolean  @default(false)
   total    Decimal  @db.Decimal(10, 2)
   pdfUrl   String?
   note     String?
+  order    Order    @relation("OrderToInvoice", fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FULFILLED
+  CANCELED
+  CONFIRMED
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
 }

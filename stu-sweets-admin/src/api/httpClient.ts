@@ -1,7 +1,8 @@
 import axios from "axios";
+import { ENV } from "../shared/config/env";
 
 const api = axios.create({
-  baseURL: "http://localhost:4000",
+  baseURL: ENV.API_URL,
   withCredentials: true,
 });
 

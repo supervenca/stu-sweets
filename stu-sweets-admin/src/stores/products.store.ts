@@ -7,6 +7,7 @@ export type Product = {
   price: number;
   stock?: number;
   description: string;
+  imageUrl?: string | null;
   categoryId: number | null;
   category?: {
     id: number;
@@ -26,6 +27,7 @@ type CreateProductDto = {
   price: number;
   stock?: number;
   description: string;
+  imageUrl?: string | null;
   categoryId: number | null;
   subCategoryId?: number | null;
   isBestseller?: boolean;

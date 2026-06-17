@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import { ENV } from "./config/env.js";
+
 import express from "express";
 import cors from "cors";
 //import userRoutes from "./routes/user.routes.js";
@@ -25,10 +27,7 @@ const app = express();
 
 app.use(express.json());
 app.use(cors({
-  origin: [
-      "http://localhost:3000", // фронт
-      "http://localhost:5173", // админка
-    ],
+  origin:  ENV.CLIENT_URLS,
   credentials: true,
 }));
 
