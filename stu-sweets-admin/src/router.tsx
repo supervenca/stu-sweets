@@ -12,6 +12,7 @@ import ClientsPage from "./pages/ClientsPage";
 import BestsellersPage from "./pages/BestsellersPage";
 import CartRecommendationPage from "./pages/CartRecommendationPage";
 import CalendarPage from "./pages/PickupCalendarPage";
+import CarouselPage from "./pages/CarouselPage";
 
 const router = createBrowserRouter([
   {
@@ -34,7 +35,8 @@ const router = createBrowserRouter([
           { path: "calendar", element: <CalendarPage /> },
           { path: "bestsellers", element: <BestsellersPage /> },
           { path: "cart-recommendations", element: <CartRecommendationPage /> },
-          { path: "clients", element: <ClientsPage /> }
+          { path: "clients", element: <ClientsPage /> },
+          { path: "carousel", element: <CarouselPage /> }
         ],
       },
     ],

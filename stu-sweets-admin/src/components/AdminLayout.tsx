@@ -11,6 +11,7 @@ import {
   StarOutlined,
   ClusterOutlined,
   CalendarOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../auth/auth.store";
@@ -64,6 +65,11 @@ const AdminLayout = () => {
       key: "/cart-recommendations",
       icon: <ShoppingCartOutlined />,
       label: "Don't forget to buy",
+    },
+    {
+      key: "/carousel",
+      icon: <UploadOutlined />,
+      label: "Carousel",
     },
     {
       key: "/clients",

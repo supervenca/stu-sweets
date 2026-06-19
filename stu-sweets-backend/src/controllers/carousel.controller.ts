@@ -28,7 +28,6 @@ export async function updateSlideController(req: Request, res: Response) {
   const { sortOrder, isActive } = req.body;
 
   const slide = await updateSlide(id, {
-    sortOrder: sortOrder !== undefined ? Number(sortOrder) : undefined,
     isActive: isActive === true || isActive === "true"
   });
 

@@ -3,6 +3,5 @@ export type CreateCarouselSlideDto = {
 };
 
 export type UpdateCarouselSlideDto = {
-  sortOrder?: number;
   isActive?: boolean;
 };

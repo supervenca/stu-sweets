@@ -34,10 +34,6 @@ export async function updateSlide(id: number, data: UpdateCarouselSlideDto) {
   return prisma.carouselSlide.update({
     where: { id },
     data: {
-    ...(data.sortOrder !== undefined && {
-        sortOrder: data.sortOrder,
-    }),
-
     ...(data.isActive !== undefined && {
         isActive: data.isActive,
     }),
@@ -46,10 +42,7 @@ export async function updateSlide(id: number, data: UpdateCarouselSlideDto) {
 }
 
 export async function deleteSlide(id: number) {
-  const slide =
-    await prisma.carouselSlide.findUnique({
-      where: { id },
-    });
+  const slide = await prisma.carouselSlide.findUnique({ where: { id } });
 
   if (!slide) {
     throw new HttpError(404, "Slide not found");
@@ -57,9 +50,23 @@ export async function deleteSlide(id: number) {
 
   await diskStorage.delete(slide.imageUrl);
 
-  return prisma.carouselSlide.delete({
-    where: { id },
+  await prisma.carouselSlide.delete({ where: { id } });
+
+  // 🔥 пересобираем порядок
+  const slides = await prisma.carouselSlide.findMany({
+    orderBy: { sortOrder: "asc" },
   });
+
+  await Promise.all(
+    slides.map((s, index) =>
+      prisma.carouselSlide.update({
+        where: { id: s.id },
+        data: { sortOrder: index + 1 },
+      })
+    )
+  );
+
+  return { success: true };
 }
 
 export async function moveSlideUp(id: number) {
