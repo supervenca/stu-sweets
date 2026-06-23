@@ -122,17 +122,30 @@ export async function setProductImage(productId: number, url: string) {
   });
 }
 
-// export async function replaceProductImage(productId: number, newFile: FileType) {
-//   const product = await prisma.product.findUnique({ where: { id: productId } });
+export async function replaceProductImage(
+  productId: number,
+  newFile: Express.Multer.File
+) {
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+  });
 
-//   if (product?.imageUrl) {
-//     await diskStorage.delete(product.imageUrl);
-//   }
+  const uploaded = await uploadFile(
+    newFile,
+    "product"
+  );
 
-//   const newUrl = await uploadFile(newFile, "product");
+  const updated = await setProductImage(
+    productId,
+    uploaded.url
+  );
 
-//   return setProductImage(productId, newUrl.url);
-// }
+  if (product?.imageUrl) {
+    await diskStorage.delete(product.imageUrl);
+  }
+
+  return updated;
+}
 
 export async function deleteProductImage(url: string) {
   await diskStorage.delete(url);

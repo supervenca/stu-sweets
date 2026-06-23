@@ -37,16 +37,19 @@ model Product {
   name                 String
   description          String?
   price                Decimal      @db.Decimal(10, 2)
-  stock                Int          @default(0)
   createdAt            DateTime     @default(now())
   categoryId           Int?
   isBestseller         Boolean      @default(false)
   isCartRecommendation Boolean      @default(false)
   subCategoryId        Int?
   imageUrl             String?
+
   orderItems           OrderItem[]
+  
   category             Category?    @relation("ProductToCategory", fields: [categoryId], references: [id])
   subCategory          SubCategory? @relation(fields: [subCategoryId], references: [id])
+  
+  cakeConfig  CakeConfig?
 }
 
 model OrderItem {
@@ -55,17 +58,45 @@ model OrderItem {
   productId   Int
   price       Decimal      @db.Decimal(10, 2)
   quantity    Int
-  cakeOptions CakeOption[] @relation("OrderItemToCakeOption")
+
+  cakeOptions CakeOption[]
+
   order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
   product     Product      @relation(fields: [productId], references: [id])
+
+  message   String?
 }
 
 model CakeOption {
   id          Int       @id @default(autoincrement())
-  name        String
-  value       String
   orderItemId Int
-  orderItem   OrderItem @relation("OrderItemToCakeOption", fields: [orderItemId], references: [id], onDelete: Cascade)
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  type        String
+  value       String
+}
+
+model CakeConfig {
+  id          Int     @id @default(autoincrement())
+  productId   Int     @unique
+
+  flavor              String[]
+  color               String[]
+  messageColor        String[]
+  certificate         Boolean      @default(false)
+
+  cakeSizes   CakeSize[]
+
+  product     Product @relation(fields: [productId], references: [id])
+}
+
+model CakeSize {
+  id        Int     @id @default(autoincrement())
+  name      String
+  multiplier Float
+
+  cakeConfigId Int
+  cakeConfig   CakeConfig @relation(fields: [cakeConfigId], references: [id], onDelete: Cascade)
 }
 
 model Order {

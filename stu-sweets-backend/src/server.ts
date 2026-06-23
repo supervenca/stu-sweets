@@ -21,6 +21,8 @@ import internalPickupRoutes from "./routes/pickup.internal.routes.js";
 import pickupRoutes from "./routes/pickup.routes.js";
 import internalCarouselRoutes from "./routes/carousel.internal.routes.js";
 import carouselRoutes from "./routes/carousel.routes.js";
+import cakeConfigRoutes from "./routes/cakeConfig.routes.js";
+import cakeConfigInternalRoutes from "./routes/cakeConfig.internal.routes.js";
 
 import authRoutes from "./routes/auth.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
@@ -52,6 +54,8 @@ app.use("/internal/pickup", internalPickupRoutes);
 app.use("/pickup", pickupRoutes);
 app.use("/internal/carousel", internalCarouselRoutes);
 app.use("/carousel", carouselRoutes);
+app.use("/cake-config", cakeConfigRoutes);
+app.use("/internal/cake-config", cakeConfigInternalRoutes);
 
 app.use("/auth", authRoutes);
 

@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct, setProductImage, removeProductImageURL } from "../services/product.service.js";
+import { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct, setProductImage, replaceProductImage, removeProductImageURL } from "../services/product.service.js";
 import { createProductSchema, updateProductSchema } from "../schemas/product.schema.js";
 import { HttpError } from "../utils/httpError.js";
 import { uploadFile } from "../services/file.service.js";
@@ -65,14 +65,9 @@ export async function setProductImageController(
     throw new HttpError(400, "Image file is required");
   }
 
-  const uploaded = await uploadFile(
-    req.file,
-    "product"
-  );
-
-  const product = await setProductImage(
+  const product = await replaceProductImage(
     productId,
-    uploaded.url
+    req.file
   );
 
   return res.json(product);
