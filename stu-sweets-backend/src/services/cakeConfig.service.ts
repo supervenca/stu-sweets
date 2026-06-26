@@ -8,9 +8,6 @@ export async function getCakeConfig(
     where: {
       productId,
     },
-    include: {
-      cakeSizes: true,
-    },
   });
 }
 
@@ -26,117 +23,58 @@ export async function createCakeConfig(
   }
 
   return prisma.cakeConfig.create({
-    data,
-    include: {
-      cakeSizes: true,
-    },
-  });
-}
-
-export async function updateCakeConfig(
-  productId: number,
-  data: UpdateCakeConfigDto
-) {
-  return prisma.$transaction(async (tx) => {
-    // 1. получаем конфиг + текущие sizes
-    const config = await tx.cakeConfig.findUnique({
-      where: { productId },
-      include: { cakeSizes: true },
-    });
-
-    if (!config) {
-      throw new Error("CakeConfig not found");
-    }
-
-    // 2. обновляем простые поля
-    await tx.cakeConfig.update({
-      where: { productId },
-      data: {
-        ...(data.flavor && { flavor: data.flavor }),
-        ...(data.color && { color: data.color }),
-        ...(data.messageColor && { messageColor: data.messageColor }),
-        ...(typeof data.certificate === "boolean" && { certificate: data.certificate }),
-      }
-    });
-
-    // 3. если sizes пришли — синхронизируем
-    if (data.cakeSizes !== undefined) {
-      const incomingIds = data.cakeSizes
-      .map((s) => s.id)
-      .filter((id): id is number => id !== undefined);
-
-      // 3.1 update + create
-      for (const size of data.cakeSizes) {
-        if (size.id) {
-          await tx.cakeSize.update({
-            where: { id: size.id },
-            data: {
-              name: size.name,
-              multiplier: size.multiplier,
-            },
-          });
-        } else {
-          await tx.cakeSize.create({
-            data: {
-              name: size.name,
-              multiplier: size.multiplier,
-              cakeConfigId: config.id,
-            },
-          });
-        }
-      }
-
-      // 3.2 delete missing
-      await tx.cakeSize.deleteMany({
-        where: {
-          cakeConfigId: config.id,
-          id: {
-            notIn: incomingIds.length ? incomingIds : [-1],
-          },
-        },
-      });
-    }
-
-    // 4. возвращаем актуальный конфиг
-    return tx.cakeConfig.findUnique({
-      where: { productId },
-      include: { cakeSizes: true },
-    });
-  });
-}
-
-export async function createCakeSize(
-  cakeConfigId: number,
-  data: {
-    name: string;
-    multiplier: number;
-  }
-) {
-  return prisma.cakeSize.create({
     data: {
-      ...data,
-      cakeConfigId,
+      productId: data.productId,
+      flavor: data.flavor,
+      color: data.color,
+      messageColor: data.messageColor,
+      certificate: data.certificate,
+
+      smallMultiplier: data.smallMultiplier ?? 1,
+      mediumMultiplier: data.mediumMultiplier ?? 1.5,
+      largeMultiplier: data.largeMultiplier ?? 2,
+    }
+  });
+}
+
+export async function updateCakeConfig(productId: number, data: UpdateCakeConfigDto) {
+  const config = await prisma.cakeConfig.findUnique({
+    where: { productId },
+  });
+
+  if (!config) {
+    throw new Error("CakeConfig not found");
+  }
+
+  await prisma.cakeConfig.update({
+    where: { productId },
+    data: {
+      ...(data.flavor && { flavor: data.flavor }),
+      ...(data.color && { color: data.color }),
+      ...(data.messageColor && { messageColor: data.messageColor }),
+      ...(typeof data.certificate === "boolean" && { certificate: data.certificate }),
+
+      ...(data.smallMultiplier !== undefined && { smallMultiplier: data.smallMultiplier }),
+      ...(data.mediumMultiplier !== undefined && { mediumMultiplier: data.mediumMultiplier }),
+      ...(data.largeMultiplier !== undefined && { largeMultiplier: data.largeMultiplier }),
     },
   });
-}
 
-export async function updateCakeSize(
-  id: number,
-  data: {
-    name?: string;
-    multiplier?: number;
-  }
-) {
-  return prisma.cakeSize.update({
-    where: { id },
-    data,
+  return prisma.cakeConfig.findUnique({
+    where: { productId },
   });
 }
 
-export async function deleteCakeSize(
-  id: number
-) {
-  return prisma.cakeSize.delete({
-    where: { id },
+export async function deleteCakeConfig(productId: number) {
+  const config = await prisma.cakeConfig.findUnique({
+    where: { productId },
+  });
+
+  if (!config) {
+    throw new Error("CakeConfig not found");
+  }
+
+  return prisma.cakeConfig.delete({
+    where: { productId },
   });
 }

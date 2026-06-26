@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { updateCakeConfigSchema, cakeSizeSchema } from "../schemas/cakeConfig.schema.js";
-
-export type CakeSizeDto = z.infer<typeof cakeSizeSchema>;
+import { updateCakeConfigSchema } from "../schemas/cakeConfig.schema.js";
 export type UpdateCakeConfigDto = z.infer<typeof updateCakeConfigSchema>;
 
 export type CreateCakeConfigDto = {
@@ -12,4 +10,8 @@ export type CreateCakeConfigDto = {
   messageColor: string[];
 
   certificate: boolean;
+
+  smallMultiplier?: number;
+  mediumMultiplier?: number;
+  largeMultiplier?: number;
 };

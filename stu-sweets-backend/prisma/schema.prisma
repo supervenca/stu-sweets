@@ -85,18 +85,11 @@ model CakeConfig {
   messageColor        String[]
   certificate         Boolean      @default(false)
 
-  cakeSizes   CakeSize[]
+  smallMultiplier  Float?
+  mediumMultiplier Float?
+  largeMultiplier  Float?
 
   product     Product @relation(fields: [productId], references: [id])
-}
-
-model CakeSize {
-  id        Int     @id @default(autoincrement())
-  name      String
-  multiplier Float
-
-  cakeConfigId Int
-  cakeConfig   CakeConfig @relation(fields: [cakeConfigId], references: [id], onDelete: Cascade)
 }
 
 model Order {

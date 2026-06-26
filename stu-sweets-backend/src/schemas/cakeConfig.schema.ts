@@ -1,16 +1,12 @@
 import { z } from "zod";
 
-export const cakeSizeSchema = z.object({
-  id: z.number().int().positive().optional(),
-  name: z.string().trim().min(1),
-  multiplier: z.number().positive(),
-});
-
 export const updateCakeConfigSchema = z.object({
-  flavor: z.array(z.string().trim().min(1)).default([]),
-  color: z.array(z.string().trim().min(1)).default([]),
-  messageColor: z.array(z.string().trim().min(1)).default([]),
-  certificate: z.boolean().default(false),
+  flavor: z.array(z.string().trim().min(1)).optional(),
+  color: z.array(z.string().trim().min(1)).optional(),
+  messageColor: z.array(z.string().trim().min(1)).optional(),
+  certificate: z.boolean().optional(),
 
-  cakeSizes: z.array(cakeSizeSchema).optional(),
+  smallMultiplier: z.number().positive().optional(),
+  mediumMultiplier: z.number().positive().optional(),
+  largeMultiplier: z.number().positive().optional(),
 });

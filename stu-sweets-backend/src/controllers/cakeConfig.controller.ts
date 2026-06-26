@@ -5,6 +5,7 @@ import {
   getCakeConfig,
   createCakeConfig,
   updateCakeConfig,
+  deleteCakeConfig,
 } from "../services/cakeConfig.service.js";
 
 import {
@@ -42,6 +43,9 @@ export async function createCakeConfigController(req: Request, res: Response) {
     color: req.body.color ?? [],
     messageColor: req.body.messageColor ?? [],
     certificate: req.body.certificate ?? false,
+    smallMultiplier: req.body.smallMultiplier ?? 1,
+    mediumMultiplier: req.body.mediumMultiplier ?? 1.5,
+    largeMultiplier: req.body.largeMultiplier ?? 2,
   };
 
   const config = await createCakeConfig(data);
@@ -68,4 +72,16 @@ export async function updateCakeConfigController(req: Request, res: Response) {
   const updated = await updateCakeConfig(productId, parsed.data);
 
   return res.json(updated);
+}
+
+export async function deleteCakeConfigController(req: Request, res: Response) {
+  const productId = Number(req.params.productId);
+
+  if (Number.isNaN(productId)) {
+    throw new HttpError(400, "Invalid product id");
+  }
+
+  await deleteCakeConfig(productId);
+
+  return res.json({ success: true });
 }

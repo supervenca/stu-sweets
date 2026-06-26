@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createCakeConfigController, updateCakeConfigController} from "../controllers/cakeConfig.controller.js";
+import { createCakeConfigController, deleteCakeConfigController, updateCakeConfigController} from "../controllers/cakeConfig.controller.js";
 
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -9,5 +9,6 @@ router.use(authMiddleware);
 
 router.post("/:productId", createCakeConfigController);
 router.patch("/:productId", updateCakeConfigController);
+router.delete("/:productId", deleteCakeConfigController);
 
 export default router;
