@@ -23,11 +23,11 @@ export const createCategory = async (req: Request, res: Response) => {
     });
   }
 
-  const { name, requiresPickupSlot = false } = parseResult.data;
+  const { name, requiresPickupSlot = false, requiresCakeOptions = false } = parseResult.data;
 
   try {
     const category = await prisma.category.create({
-      data: { name, requiresPickupSlot },
+      data: { name, requiresPickupSlot, requiresCakeOptions },
     });
 
     res.status(201).json(category);

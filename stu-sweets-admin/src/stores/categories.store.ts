@@ -5,6 +5,7 @@ export type Category = {
   id: number;
   name: string;
   requiresPickupSlot: boolean;
+  requiresCakeOptions: boolean;
 };
 
 type CategoriesState = {
@@ -13,12 +14,13 @@ type CategoriesState = {
   error: string | null;
 
   fetchCategories: () => Promise<void>;
-  createCategory: (name: string, requiresPickupSlot: boolean) => Promise<void>;
+  createCategory: (name: string, requiresPickupSlot: boolean, requiresCakeOptions: boolean) => Promise<void>;
   updateCategory: (
   id: number,
   data: {
     name?: string;
     requiresPickupSlot?: boolean;
+    requiresCakeOptions?: boolean;
   }
 ) => Promise<void>;
   deleteCategory: (id: number) => Promise<void>;
@@ -39,9 +41,9 @@ export const useCategoriesStore = create<CategoriesState>((set) => ({
     }
   },
 
-  createCategory: async (name: string, requiresPickupSlot: boolean) => {
+  createCategory: async (name: string, requiresPickupSlot: boolean, requiresCakeOptions: boolean) => {
     try {
-      const res = await api.post("/internal/categories", { name, requiresPickupSlot });
+      const res = await api.post("/internal/categories", { name, requiresPickupSlot, requiresCakeOptions });
       set((state) => ({
         categories: [...state.categories, res.data],
       }));
@@ -53,6 +55,7 @@ export const useCategoriesStore = create<CategoriesState>((set) => ({
   updateCategory: async (id: number, data: {
     name?: string;
     requiresPickupSlot?: boolean;
+    requiresCakeOptions?: boolean;
   }) => {
     try {
       const res = await api.patch(`/internal/categories/${id}`, data);

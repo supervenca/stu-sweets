@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCategoriesStore, type Category } from "../stores/categories.store";
 
-import { Row, Col, Table, Input, Button, Space, Popconfirm, Typography, message, Select } from "antd";
+import { Row, Col, Table, Input, Button, Space, Popconfirm, Typography, message, Select, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 
 import { TABLE_CONFIG, tableCellStyle, useResponsive } from "../shared/responsive";
@@ -24,7 +24,10 @@ const CategoriesPage = () => {
   const [editingName, setEditingName] = useState("");
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [requiresPickupSlot, setRequiresPickupSlot] = useState(false);
+  const [requiresCakeOptions, setRequiresCakeOptions] = useState(false);
   const [editingRequiresPickupSlot, setEditingRequiresPickupSlot] =
+  useState<boolean>(false);
+  const [editingRequiresCakeOptions, setEditingRequiresCakeOptions] =
   useState<boolean>(false);
 
   const isAddDisabled = !name.trim();
@@ -50,10 +53,11 @@ const CategoriesPage = () => {
     message.loading({ content: "Creating...", key });
 
     try {
-      await createCategory(name, requiresPickupSlot);
+      await createCategory(name, requiresPickupSlot, requiresCakeOptions);
       message.success({ content: "Category created", key });
       setName("");
       setRequiresPickupSlot(false);
+      setRequiresCakeOptions(false);
     } catch {
       message.error({ content: "Failed to create category", key });
     }
@@ -72,6 +76,7 @@ const CategoriesPage = () => {
     await updateCategory(id, {
       name: editingName,
       requiresPickupSlot: editingRequiresPickupSlot,
+      requiresCakeOptions: editingRequiresCakeOptions,
     });
 
     message.success({ content: "Category updated", key });
@@ -137,11 +142,35 @@ const CategoriesPage = () => {
             </Select.Option>
           </Select>
         ) : value ? (
-          "Required"
+          <Tag color="green">Required</Tag>
         ) : (
-          "Not Required"
+          <Tag color="red">Not Required</Tag>
         ),
     },
+    {
+      title: "Product Configuration",
+        dataIndex: "requiresCakeOptions",
+        render: (value, record) =>
+          editingId === record.id ? (
+            <Select
+              value={editingRequiresCakeOptions}
+              onChange={setEditingRequiresCakeOptions}
+              style={{ width: 160 }}
+            >
+              <Select.Option value={true}>
+                Required
+              </Select.Option>
+
+              <Select.Option value={false}>
+                Not Required
+              </Select.Option>
+            </Select>
+          ) : value ? (
+            <Tag color="green">Required</Tag>
+          ) : (
+            <Tag color="red">Not Required</Tag>
+          ),
+    },    
     {
       title: "Actions",
       render: (_, record) =>
@@ -160,6 +189,7 @@ const CategoriesPage = () => {
                 setEditingId(null);
                 setEditingName("");
                 setEditingRequiresPickupSlot(false);
+                setEditingRequiresCakeOptions(false);
               }}
             >
               Cancel
@@ -172,6 +202,7 @@ const CategoriesPage = () => {
                 setEditingId(record.id);
                 setEditingName(record.name);
                 setEditingRequiresPickupSlot(record.requiresPickupSlot);
+                setEditingRequiresCakeOptions(record.requiresCakeOptions);
               }}
             >
               Edit
@@ -221,6 +252,21 @@ const CategoriesPage = () => {
 
             <Select.Option value={false}>
               Pick-up Calendar: Not Required
+            </Select.Option>
+          </Select>
+        </Col>
+        <Col flex={isMobile ? "100%" : "320px"}>
+          <Select
+            value={requiresCakeOptions}
+            onChange={setRequiresCakeOptions}
+            style={{ width: "100%" }}
+          >
+            <Select.Option value={true}>
+              Product Configuration: Required
+            </Select.Option>
+
+            <Select.Option value={false}>
+              Product Configuration: Not Required
             </Select.Option>
           </Select>
         </Col>
