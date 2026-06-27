@@ -59,24 +59,28 @@ model OrderItem {
   id          Int          @id @default(autoincrement())
   orderId     Int
   productId   Int
+
   price       Decimal      @db.Decimal(10, 2)
   quantity    Int
 
-  cakeOptions CakeOption[]
+  cakeConfig OrderItemCakeConfig?
 
   order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   product     Product      @relation(fields: [productId], references: [id])
 
-  message   String?
+  message     String?
+  certificate Boolean?
 }
 
-model CakeOption {
+model OrderItemCakeConfig {
   id          Int       @id @default(autoincrement())
-  orderItemId Int
+  orderItemId Int       @unique
   orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  type        String
-  value       String
+  size          CakeSize?
+  flavor        String?
+  color         String?
+  messageColor  String?
 }
 
 model CakeConfig {
@@ -86,7 +90,6 @@ model CakeConfig {
   flavor              String[]
   color               String[]
   messageColor        String[]
-  certificate         Boolean      @default(false)
 
   smallMultiplier  Float?
   mediumMultiplier Float?
@@ -152,6 +155,15 @@ model Invoice {
   order    Order    @relation("OrderToInvoice", fields: [orderId], references: [id], onDelete: Cascade)
 }
 
+model CarouselSlide {
+  id         Int      @id @default(autoincrement())
+  imageUrl   String
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -165,11 +177,8 @@ enum UserRole {
   ADMIN
 }
 
-model CarouselSlide {
-  id         Int      @id @default(autoincrement())
-  imageUrl   String
-  sortOrder  Int      @default(0)
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+enum CakeSize {
+  SMALL
+  MEDIUM
+  LARGE
 }

@@ -1,7 +1,17 @@
 export interface OrderItemDto {
   productId: number;
   quantity: number;
-  price?: number;
+
+  message?: string;
+  certificate?: boolean;
+
+  cakeConfig?: {
+    size: "SMALL" | "MEDIUM" | "LARGE";
+    flavor: string;
+    color: string;
+    messageColor?: string;
+  }
+  
 }
 
 export interface CreateOrderDto {
@@ -19,6 +29,5 @@ export interface UpdateOrderDto {
   customerPhone?: string;
   comment?: string;
   status?: "PENDING" | "PAID" | "FULFILLED" | "CANCELED" | "CONFIRMED";
-  total?: number;
 }
 

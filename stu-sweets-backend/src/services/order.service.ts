@@ -1,4 +1,5 @@
 import prisma from "../prisma/client.js";
+import { Product, CakeConfig } from "@prisma/client";
 import { CreateOrderDto, UpdateOrderDto, OrderItemDto } from "../types/order.types.js";
 import { HttpError } from "../utils/httpError.js";
 import { validatePickupDate } from "./pickup.service.js";
@@ -36,6 +37,36 @@ export async function getOrderById(id: number) {
   });
 }
 
+function calculateOrderItemPrice(
+  product: Product & {
+    category: { requiresCakeOptions: boolean } | null;
+    cakeConfig: CakeConfig | null;
+  },
+  item: OrderItemDto
+) {
+  let price = Number(product.price);
+
+  // cake multiplier
+  if (product.category?.requiresCakeOptions && item.cakeConfig?.size) {
+    const config = product.cakeConfig;
+
+    let multiplier = 1;
+
+    switch (item.cakeConfig.size) {
+      case "MEDIUM":
+        multiplier = config?.mediumMultiplier ?? 1;
+        break;
+      case "LARGE":
+        multiplier = config?.largeMultiplier ?? 1;
+        break;
+    }
+
+    price *= multiplier;
+  }
+
+  return price;
+}
+
 export async function createOrder(data: CreateOrderDto) {
   return prisma.$transaction(async (tx) => {
     // Получаем продукты из БД
@@ -49,6 +80,7 @@ export async function createOrder(data: CreateOrderDto) {
       },
       include: {
         category: true,
+        cakeConfig: true,
       },
     });
 
@@ -61,11 +93,27 @@ export async function createOrder(data: CreateOrderDto) {
       if (!product) {
         throw new HttpError(404, `Product ${item.productId} not found`);
       }
+      const finalPrice = calculateOrderItemPrice(product, item);
 
       return {
         productId: item.productId,
         quantity: item.quantity,
-        price: item.price ?? product.price,
+
+        price: finalPrice,
+
+        message: item.message ?? null,
+        certificate: item.certificate ?? false,
+
+        cakeConfig: item.cakeConfig
+          ? {
+              create: {
+                size: item.cakeConfig.size ?? null,
+                flavor: item.cakeConfig.flavor ?? null,
+                color: item.cakeConfig.color ?? null,
+                messageColor: item.cakeConfig.messageColor ?? null,
+              },
+            }
+          : undefined,
       };
     });
 
@@ -114,12 +162,7 @@ export async function createOrder(data: CreateOrderDto) {
 
     // Считаем total
     const total = itemsData.reduce((sum, item) => {
-      const price =
-        typeof item.price === "number"
-          ? item.price
-          : item.price.toNumber();
-
-      return sum + price * item.quantity;
+      return sum + item.price * item.quantity;
     }, 0);
 
     // Ищем клиента
@@ -175,6 +218,7 @@ export async function createOrder(data: CreateOrderDto) {
         items: {
           include: {
             product: true,
+            cakeConfig: true,
           },
         },
       },
@@ -188,8 +232,18 @@ export async function updateOrder(id: number, data: UpdateOrderDto) {
   try {
     return await prisma.order.update({
       where: { id },
-      data,
-      include: { items: { include: { product: true } } },
+      data: {
+        customerName: data.customerName,
+        customerEmail: data.customerEmail,
+        customerPhone: data.customerPhone,
+        comment: data.comment,
+        status: data.status,
+      },
+      include: {
+        items: {
+          include: { product: true, cakeConfig: true },
+        },
+      },
     });
   } catch (e: any) {
     if (e.code === "P2025") {
@@ -253,26 +307,68 @@ export async function addOrderItem(orderId: number, item: OrderItemDto) {
 }
 
 //Обновить товар в заказе
-export async function updateOrderItem(orderId: number, itemId: number, data: Partial<OrderItemDto>) {
-  const item = await prisma.orderItem.findUnique({ where: { id: itemId } });
-  if (!item || item.orderId !== orderId) throw new HttpError(404, "Order item not found");
-
+export async function updateOrderItem(
+  orderId: number,
+  itemId: number,
+  data: Partial<OrderItemDto>
+) {
   return prisma.$transaction(async (tx) => {
-    if (data.productId && data.productId !== item.productId) {
-      const product = await tx.product.findUnique({ where: { id: data.productId } });
-      if (!product) throw new HttpError(404, "Product not found");
-      data.price = product.price.toNumber();
+    const item = await tx.orderItem.findUnique({
+      where: { id: itemId },
+    });
+
+    if (!item || item.orderId !== orderId) {
+      throw new HttpError(404, "Order item not found");
     }
 
-    const updatedItem = await tx.orderItem.update({
+    const product = await tx.product.findUnique({
+      where: { id: data.productId ?? item.productId },
+      include: { category: true, cakeConfig: true },
+    });
+
+    if (!product) throw new HttpError(404, "Product not found");
+
+    const merged: OrderItemDto = {
+      productId: product.id,
+      quantity: data.quantity ?? item.quantity,
+      message: data.message ?? item.message ?? undefined,
+      cakeConfig: data.cakeConfig ?? undefined,
+    };
+
+    const price = calculateOrderItemPrice(product, merged);
+
+    const updated = await tx.orderItem.update({
       where: { id: itemId },
-      data,
-      include: { product: true },
+      data: {
+        productId: product.id,
+        quantity: merged.quantity,
+        price,
+        message: merged.message,
+        cakeConfig: data.cakeConfig
+          ? {
+              upsert: {
+                create: {
+                  size: data.cakeConfig.size ?? null,
+                  flavor: data.cakeConfig.flavor ?? null,
+                  color: data.cakeConfig.color ?? null,
+                  messageColor: data.cakeConfig.messageColor ?? null,
+                },
+                update: {
+                  size: data.cakeConfig.size ?? null,
+                  flavor: data.cakeConfig.flavor ?? null,
+                  color: data.cakeConfig.color ?? null,
+                  messageColor: data.cakeConfig.messageColor ?? null,
+                },
+              },
+            }
+          : undefined,
+      },
+      include: { product: true, cakeConfig: true },
     });
 
     await recalculateOrderTotal(tx, orderId);
 
-    return updatedItem;
+    return updated;
   });
 }
 

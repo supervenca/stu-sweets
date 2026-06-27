@@ -1,9 +1,18 @@
 import { z } from "zod";
 
+export const cakeConfigSchema = z.object({
+  size: z.enum(["SMALL", "MEDIUM", "LARGE"]),
+  flavor: z.string(),
+  color: z.string(),
+  messageColor: z.string().optional(),
+}).optional();
+
 export const orderItemSchema = z.object({
   productId: z.number().int(),
   quantity: z.number().int().positive(),
-  price: z.number().positive(),
+  message: z.string().optional(),
+  certificate: z.boolean().optional(),
+  cakeConfig: cakeConfigSchema,
 }).strict();
 
 // Схема для создания заказа
@@ -46,11 +55,14 @@ export const updateOrderSchema = z.object({
 export const updateOrderItemSchema = z.object({
   productId: z.number().int().optional(), // можно менять продукт
   quantity: z.number().int().positive().optional(), // или количество
-  price: z.number().positive().optional(), // цена может обновляться
+  message: z.string().optional(),
+  cakeConfig: cakeConfigSchema,
 }).strict();
 
 // Схема для добавления новой позиции в заказ
 export const addOrderItemSchema = z.object({
   productId: z.number().int(),
   quantity: z.number().int().positive(),
+  message: z.string().optional(),
+  cakeConfig: cakeConfigSchema,
 }).strict();

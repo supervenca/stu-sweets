@@ -42,7 +42,6 @@ export async function createCakeConfigController(req: Request, res: Response) {
     flavor: req.body.flavor ?? [],
     color: req.body.color ?? [],
     messageColor: req.body.messageColor ?? [],
-    certificate: req.body.certificate ?? false,
     smallMultiplier: req.body.smallMultiplier ?? 1,
     mediumMultiplier: req.body.mediumMultiplier ?? 1.5,
     largeMultiplier: req.body.largeMultiplier ?? 2,

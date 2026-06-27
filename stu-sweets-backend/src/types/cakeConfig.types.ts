@@ -9,8 +9,6 @@ export type CreateCakeConfigDto = {
   color: string[];
   messageColor: string[];
 
-  certificate: boolean;
-
   smallMultiplier?: number;
   mediumMultiplier?: number;
   largeMultiplier?: number;
