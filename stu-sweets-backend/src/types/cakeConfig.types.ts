@@ -7,6 +7,7 @@ export type CreateCakeConfigDto = {
 
   flavor: string[];
   color: string[];
+  message: String;
   messageColor: string[];
 
   smallMultiplier?: number;

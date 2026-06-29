@@ -2,13 +2,13 @@ export interface OrderItemDto {
   productId: number;
   quantity: number;
 
-  message?: string;
   certificate?: boolean;
 
   cakeConfig?: {
     size: "SMALL" | "MEDIUM" | "LARGE";
     flavor: string;
     color: string;
+    message?: string;
     messageColor?: string;
   }
   

@@ -9,10 +9,15 @@ export async function getAllOrders() {
     include: {
       pickupSlot: true,
       items: {
-        include: {
-          product: true,
-        },
-      },
+  include: {
+    product: {
+      include: {
+        category: true
+      }
+    },
+    cakeConfig: true
+  },
+},
       invoices: true
     },
   });
@@ -30,7 +35,12 @@ export async function getOrderById(id: number) {
       pickupSlot: true,
       items: {
         include: {
-          product: true,
+          product: {
+            include: {
+              category: true
+            }
+          },
+          cakeConfig: true
         },
       },
     },
@@ -67,6 +77,69 @@ function calculateOrderItemPrice(
   return price;
 }
 
+function validateOrderItemCakeConfig(product: Product & {
+    category: { requiresCakeOptions: boolean } | null;
+    cakeConfig: CakeConfig | null;
+  },item: OrderItemDto) {
+  if (product.category?.requiresCakeOptions) {
+  if (!item.cakeConfig) {
+    throw new HttpError(
+      400,
+      `Cake configuration is required for product ${product.name}`
+    );
+  }
+
+  const { size, flavor, color, message, messageColor } = item.cakeConfig;
+
+  if (!size) {
+    throw new HttpError(400, "Cake size is required");
+  }
+
+  if (!flavor) {
+    throw new HttpError(400, "Cake flavor is required");
+  }
+
+  if (item.cakeConfig.flavor) {
+  const allowed = product.cakeConfig?.flavor ?? [];
+
+  if (!allowed.includes(item.cakeConfig.flavor)) {
+    throw new HttpError(
+      400,
+      `Invalid flavor: ${item.cakeConfig.flavor}`
+    );
+  }
+}
+
+  if (!color) {
+    throw new HttpError(400, "Cake color is required");
+  }
+
+  if (item.cakeConfig.color) {
+  const allowed = product.cakeConfig?.color ?? [];
+
+  if (!allowed.includes(item.cakeConfig.color)) {
+    throw new HttpError(
+      400,
+      `Invalid color: ${item.cakeConfig.color}`
+    );
+  }
+}
+
+  // если есть текст, то цвет текста обязателен
+  if (item.cakeConfig.message && !item.cakeConfig.messageColor) {
+    throw new HttpError(
+      400,
+      "Message color is required when message is provided"
+    );
+  }
+  // если нет текста, то цвет не нужен
+  if (!item.cakeConfig?.message || !item.cakeConfig.message.trim()) {
+  item.cakeConfig.messageColor = undefined;
+}
+  
+}
+}
+
 export async function createOrder(data: CreateOrderDto) {
   return prisma.$transaction(async (tx) => {
     // Получаем продукты из БД
@@ -93,15 +166,13 @@ export async function createOrder(data: CreateOrderDto) {
       if (!product) {
         throw new HttpError(404, `Product ${item.productId} not found`);
       }
+      validateOrderItemCakeConfig(product, item);
       const finalPrice = calculateOrderItemPrice(product, item);
 
       return {
         productId: item.productId,
         quantity: item.quantity,
-
         price: finalPrice,
-
-        message: item.message ?? null,
         certificate: item.certificate ?? false,
 
         cakeConfig: item.cakeConfig
@@ -110,6 +181,7 @@ export async function createOrder(data: CreateOrderDto) {
                 size: item.cakeConfig.size ?? null,
                 flavor: item.cakeConfig.flavor ?? null,
                 color: item.cakeConfig.color ?? null,
+                message: item.cakeConfig.message ?? null,
                 messageColor: item.cakeConfig.messageColor ?? null,
               },
             }
@@ -331,7 +403,6 @@ export async function updateOrderItem(
     const merged: OrderItemDto = {
       productId: product.id,
       quantity: data.quantity ?? item.quantity,
-      message: data.message ?? item.message ?? undefined,
       cakeConfig: data.cakeConfig ?? undefined,
     };
 
@@ -343,7 +414,7 @@ export async function updateOrderItem(
         productId: product.id,
         quantity: merged.quantity,
         price,
-        message: merged.message,
+        certificate: merged.certificate,
         cakeConfig: data.cakeConfig
           ? {
               upsert: {

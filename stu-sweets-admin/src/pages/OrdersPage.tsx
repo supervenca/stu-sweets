@@ -16,13 +16,12 @@ import type { ColumnsType } from "antd/es/table";
 import { useOrdersStore } from "../stores/orders.store";
 import { useProductsStore } from "../stores/products.store";
 import type { Order } from "../stores/orders.store";
+import type { OrderItem } from "../stores/orders.store";
 
 import { useResponsive, TABLE_CONFIG} from "../shared/responsive";
 
 
 const { Title, Text } = Typography;
-
-type OrderItem = Order["items"][number];
 
 const OrdersPage = () => {
   const {
@@ -50,6 +49,9 @@ const OrdersPage = () => {
   const tableConfig = isMobile
   ? TABLE_CONFIG.mobile
   : TABLE_CONFIG.desktop;
+
+  const isCake = (item: OrderItem) =>
+  item.product?.category?.requiresCakeOptions;
 
   useEffect(() => {
     fetchOrders();
@@ -90,6 +92,45 @@ const OrdersPage = () => {
       {
         title: "Price",
         render: (_, item) => `€${item.price}`,
+      },
+      {
+        title: "Certificate",
+        render: (_, item) => item.certificate ? "Yes" : "No",
+      },
+    {
+        title: "Size",
+        render: (_, item) =>
+          isCake(item)
+            ? item.cakeConfig?.size ?? "—"
+            : null,
+      },
+      {
+        title: "Flavor",
+        render: (_, item) =>
+          isCake(item)
+            ? item.cakeConfig?.flavor ?? "-"
+            : null,
+      },
+      {
+        title: "Color",
+        render: (_, item) =>
+          isCake(item)
+            ? item.cakeConfig?.color ?? "—"
+            : null,
+      },
+      {
+        title: "Text",
+        render: (_, item) =>
+          isCake(item)
+            ? item.cakeConfig?.message ?? "—"
+            : null,
+      },
+      {
+        title: "Text Color",
+        render: (_, item) =>
+          isCake(item)
+            ? item.cakeConfig?.messageColor ?? "—"
+            : null,
       },
       {
         title: "",

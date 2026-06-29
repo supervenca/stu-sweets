@@ -69,7 +69,6 @@ model OrderItem {
 
   product     Product      @relation(fields: [productId], references: [id])
 
-  message     String?
   certificate Boolean?
 }
 
@@ -80,6 +79,7 @@ model OrderItemCakeConfig {
   size          CakeSize?
   flavor        String?
   color         String?
+  message       String?
   messageColor  String?
 }
 
@@ -89,6 +89,7 @@ model CakeConfig {
 
   flavor              String[]
   color               String[]
+  message             String?
   messageColor        String[]
 
   smallMultiplier  Float?

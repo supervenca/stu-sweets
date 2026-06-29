@@ -6,11 +6,24 @@ export interface OrderItem {
   productId: number;
   quantity: number;
   price: number;
+  certificate: boolean;
   product?: {
     id: number;
     name: string;
     price: number;
+    category?: {
+      id: number;
+      name: string;
+      requiresCakeOptions: boolean;
+    };
   };
+  cakeConfig?: {
+      size?: "SMALL" | "MEDIUM" | "LARGE";
+      flavor?: string;
+      color?: string;
+      message?: string;
+      messageColor?: string;
+    };
 }
 
 export interface Order {

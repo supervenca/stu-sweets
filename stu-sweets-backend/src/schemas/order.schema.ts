@@ -4,13 +4,13 @@ export const cakeConfigSchema = z.object({
   size: z.enum(["SMALL", "MEDIUM", "LARGE"]),
   flavor: z.string(),
   color: z.string(),
+  message: z.string().optional(),
   messageColor: z.string().optional(),
 }).optional();
 
 export const orderItemSchema = z.object({
   productId: z.number().int(),
   quantity: z.number().int().positive(),
-  message: z.string().optional(),
   certificate: z.boolean().optional(),
   cakeConfig: cakeConfigSchema,
 }).strict();
