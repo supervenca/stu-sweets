@@ -5,7 +5,6 @@ export type Product = {
   id: number;
   name: string;
   price: number;
-  stock?: number;
   description: string;
   imageUrl?: string | null;
   categoryId: number | null;
@@ -25,7 +24,6 @@ export type Product = {
 type CreateProductDto = {
   name: string;
   price: number;
-  stock?: number;
   description: string;
   imageUrl?: string | null;
   categoryId: number | null;

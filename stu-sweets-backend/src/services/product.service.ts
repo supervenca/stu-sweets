@@ -41,7 +41,6 @@ export async function createProduct(data: CreateProductDto) {
       name: data.name,
       description: data.description,
       price: new Decimal(data.price),
-      stock: data.stock ?? 0,
       categoryId: data.categoryId,
       subCategoryId: data.subCategoryId
     },
@@ -76,10 +75,6 @@ export async function updateProduct(id: number, data: UpdateProductDto) {
 
   ...(data.price !== undefined && {
     price: new Decimal(data.price),
-  }),
-
-  ...(data.stock !== undefined && {
-    stock: data.stock,
   }),
 
   ...(data.categoryId !== undefined && {

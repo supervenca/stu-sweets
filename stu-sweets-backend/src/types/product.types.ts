@@ -2,7 +2,6 @@ export interface CreateProductDto {
   name: string;
   description?: string;
   price: number;
-  stock?: number;
   categoryId?: number | null;
   subCategoryId?: number | null;
   isBestseller?: boolean;
@@ -13,7 +12,6 @@ export interface UpdateProductDto {
   name?: string;
   description?: string;
   price?: number;
-  stock?: number;
   categoryId?: number | null;
   subCategoryId?: number | null;
   isBestseller?: boolean;
