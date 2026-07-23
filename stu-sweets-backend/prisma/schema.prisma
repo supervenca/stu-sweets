@@ -169,7 +169,6 @@ enum OrderStatus {
   PENDING
   PAID
   FULFILLED
-  CANCELED
   CONFIRMED
 }
 

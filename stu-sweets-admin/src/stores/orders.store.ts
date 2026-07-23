@@ -32,7 +32,7 @@ export interface Order {
   customerEmail: string;
   customerPhone?: string;
   comment?: string;
-  status: "PENDING" | "CONFIRMED" | "PAID" | "FULFILLED" | "CANCELED";
+  status: "PENDING" | "CONFIRMED" | "PAID" | "FULFILLED";
   total: number;
   createdAt: string;
   items: OrderItem[];
@@ -50,22 +50,9 @@ type OrdersState = {
   fetchOrders: () => Promise<void>;
   updateOrder: (id: number, data: Partial<Order>) => Promise<void>;
   deleteOrder: (id: number) => Promise<void>;
-
-  addItem: (
-    orderId: number,
-    item: { productId: number; quantity: number }
-  ) => Promise<void>;
-
-  updateItem: (
-    orderId: number,
-    itemId: number,
-    data: { quantity?: number }
-  ) => Promise<void>;
-
-  deleteItem: (orderId: number, itemId: number) => Promise<void>;
 };
 
-export const useOrdersStore = create<OrdersState>((set, get) => ({
+export const useOrdersStore = create<OrdersState>((set) => ({
   orders: [],
   loading: false,
   error: null,
@@ -120,44 +107,6 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     } catch (err) {
       console.error(err);
       set({ error: "Failed to delete order" });
-    }
-  },
-
-  addItem: async (orderId, item) => {
-    try {
-      await api.post(`/internal/orders/${orderId}/items`, item);
-
-      await get().fetchOrders();
-    } catch (err) {
-      console.error(err);
-      set({ error: "Failed to add item" });
-    }
-  },
-
-  updateItem: async (orderId, itemId, data) => {
-    try {
-      await api.put(
-        `/internal/orders/${orderId}/items/${itemId}`,
-        data
-      );
-
-      await get().fetchOrders();
-    } catch (err) {
-      console.error(err);
-      set({ error: "Failed to update item" });
-    }
-  },
-
-  deleteItem: async (orderId, itemId) => {
-    try {
-      await api.delete(
-        `/internal/orders/${orderId}/items/${itemId}`
-      );
-
-      await get().fetchOrders();
-    } catch (err) {
-      console.error(err);
-      set({ error: "Failed to delete item" });
     }
   },
 }));

@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { Row, Col, Table, Input, Button, Space, Select, Popconfirm, Typography, InputNumber, message } from "antd";
+import { Row, Col, Table, Input, Button, Space, Select, Popconfirm, Typography, InputNumber, message, Modal } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { Upload } from "antd";
-
 
 import { productsApi } from "../api/products.api";
 
@@ -10,9 +9,14 @@ import type { Product } from "../stores/products.store";
 import { useProductsStore } from "../stores/products.store";
 import { useCategoriesStore } from "../stores/categories.store";
 import { useSubCategoriesStore } from "../stores/subCategories.store";
+import { useCakeConfigStore } from "../stores/cakeConfig.store";
 
 import { useResponsive, TABLE_CONFIG } from "../shared/responsive";
 import { getImageUrl } from "../shared/utils/getImageUrl";
+
+import type { CakeConfigPayload } from "../types/cakeConfig.types";
+import { getCakeConfig } from "../api/cakeConfig.api";
+
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -38,6 +42,11 @@ const ProductsPage = () => {
 
   const { categories, fetchCategories } = useCategoriesStore();
   const { subCategories, fetchSubCategories } = useSubCategoriesStore();
+  const {
+      loading: cakeConfigLoading,
+      saveCakeConfig,
+      removeCakeConfig,
+  } = useCakeConfigStore();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -55,6 +64,19 @@ const ProductsPage = () => {
   });
 
   const [pendingId, setPendingId] = useState<number | null>(null);
+
+  const [cakeConfigOpen, setCakeConfigOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const [configForm, setConfigForm] = useState<CakeConfigPayload>({
+    color: [],
+    flavor: [],
+    messageColor: [],
+
+    smallMultiplier: 1,
+    mediumMultiplier: 1,
+    largeMultiplier: 1,
+  });
 
   useEffect(() => {
     fetchProducts();
@@ -159,6 +181,49 @@ const handleDeleteImage = async (
   } catch {
     message.error("Failed to delete image");
   }
+};
+
+// CAKE CONFIG
+const openCakeConfig = async (product: Product) => {
+  setSelectedProduct(product);
+
+  const config = await getCakeConfig(product.id);
+
+  if (config) {
+    setConfigForm({
+      color: config.color,
+      flavor: config.flavor,
+      messageColor: config.messageColor,
+
+      smallMultiplier: config.smallMultiplier ?? 1,
+      mediumMultiplier: config.mediumMultiplier ?? 1,
+      largeMultiplier: config.largeMultiplier ?? 1,
+    });
+  } else {
+    setConfigForm({
+      color: [],
+      flavor: [],
+      messageColor: [],
+      smallMultiplier: 1,
+      mediumMultiplier: 1,
+      largeMultiplier: 1,
+    });
+  }
+
+  setCakeConfigOpen(true);
+};
+
+const handleSaveCakeConfig = async () => {
+  if (!selectedProduct) return;
+
+  await saveCakeConfig(
+    selectedProduct.id,
+    configForm
+  );
+
+  message.success("Cake config saved");
+
+  setCakeConfigOpen(false);
 };
 
   // TABLE
@@ -276,58 +341,72 @@ const handleDeleteImage = async (
         ),
     },
     {
-  title: "Image",
-    render: (_, record) => (
-      <Space direction="vertical">
+      title: "Image",
+        render: (_, record) => (
+          <Space direction="vertical">
 
-        {record.imageUrl ? (
-          <>
-            <img
-              src={getImageUrl(record.imageUrl)}
-              alt={record.name}
-              style={{
-                width: 80,
-                height: 80,
-                objectFit: "cover",
-                borderRadius: 8,
+            {record.imageUrl ? (
+              <>
+                <img
+                  src={getImageUrl(record.imageUrl)}
+                  alt={record.name}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    objectFit: "cover",
+                    borderRadius: 8,
+                  }}
+                />
+
+                <Button
+                  danger
+                  size="small"
+                  onClick={() =>
+                    handleDeleteImage(record.id)
+                  }
+                >
+                  Delete image
+                </Button>
+              </>
+            ) : (
+              <Text type="secondary">
+                No image
+              </Text>
+            )}
+
+            <Upload
+              showUploadList={false}
+              beforeUpload={(file) => {
+                handleUploadImage(
+                  record.id,
+                  file
+                );
+
+                return false;
               }}
-            />
-
-            <Button
-              danger
-              size="small"
-              onClick={() =>
-                handleDeleteImage(record.id)
-              }
             >
-              Delete image
+            <Button size="small">
+              Upload
             </Button>
-          </>
+          </Upload>
+
+        </Space>
+      ),
+    },
+    {
+      title: "Cake Config",
+      render: (_, record) =>
+        record.category?.requiresCakeOptions ? (
+          <Button
+            size="small"
+            onClick={() => openCakeConfig(record)}
+          >
+            Configure
+          </Button>
         ) : (
-          <Text type="secondary">
-            No image
-          </Text>
-        )}
-
-        <Upload
-          showUploadList={false}
-          beforeUpload={(file) => {
-            handleUploadImage(
-              record.id,
-              file
-            );
-
-            return false;
-          }}
-        >
-        <Button size="small">
-          Upload
-        </Button>
-      </Upload>
-
-    </Space>
-  ),
-},
+          "—"
+        ),
+    },
     {
       title: "Actions",
       render: (_, record) =>
@@ -470,6 +549,118 @@ const handleDeleteImage = async (
         size={tableConfig.size}
         pagination={{ pageSize: tableConfig.pageSize }}
       />
+
+      <Modal
+        open={cakeConfigOpen}
+        confirmLoading={cakeConfigLoading}
+        title={`Cake config: ${selectedProduct?.name}`}
+        onCancel={() => setCakeConfigOpen(false)}
+        onOk={handleSaveCakeConfig}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Text>Colors</Text>
+
+          <Select
+            mode="tags"
+            style={{ width: "100%" }}
+            value={configForm.color}
+            onChange={(value) =>
+              setConfigForm({
+                ...configForm,
+                color: value,
+              })
+            }
+          />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <Text>Flavors</Text>
+
+          <Select
+            mode="tags"
+            style={{ width: "100%" }}
+            value={configForm.flavor}
+            onChange={(value) =>
+              setConfigForm({
+                ...configForm,
+                flavor: value,
+              })
+            }
+          />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <Text>Message Colors</Text>
+
+          <Select
+            mode="tags"
+            style={{ width: "100%" }}
+            value={configForm.messageColor}
+            onChange={(value) =>
+              setConfigForm({
+                ...configForm,
+                messageColor: value,
+              })
+            }
+          />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <Text>Small Multiplier</Text>
+
+          <InputNumber
+            style={{ width: "100%" }}
+            value={configForm.smallMultiplier}
+            onChange={(v) =>
+              setConfigForm({
+                ...configForm,
+                smallMultiplier: Number(v),
+              })
+            }
+          />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <Text>Medium Multiplier</Text>
+
+          <InputNumber
+            style={{ width: "100%" }}
+            value={configForm.mediumMultiplier}
+            onChange={(v) =>
+              setConfigForm({
+                ...configForm,
+                mediumMultiplier: Number(v),
+              })
+            }
+          />
+        </div>
+
+        <div>
+          <Text>Large Multiplier</Text>
+
+          <InputNumber
+            style={{ width: "100%" }}
+            value={configForm.largeMultiplier}
+            onChange={(v) =>
+              setConfigForm({
+                ...configForm,
+                largeMultiplier: Number(v),
+              })
+            }
+          />
+        </div>
+        <Button
+          danger
+          onClick={async () => {
+            if (!selectedProduct) return
+            await removeCakeConfig(selectedProduct.id);
+            message.success("Cake config removed");
+            setCakeConfigOpen(false);
+          }}
+        >
+          Delete config
+        </Button>
+      </Modal>
     </div>
   );
 };

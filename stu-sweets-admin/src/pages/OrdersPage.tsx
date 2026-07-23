@@ -7,7 +7,6 @@ import {
   Select,
   Popconfirm,
   Typography,
-  InputNumber,
   Card,
   message,
 } from "antd";
@@ -31,19 +30,13 @@ const OrdersPage = () => {
     fetchOrders,
     updateOrder,
     deleteOrder,
-    addItem,
-    updateItem,
-    deleteItem,
   } = useOrdersStore();
 
-  const { products, fetchProducts } = useProductsStore();
+  const {fetchProducts} = useProductsStore();
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingData, setEditingData] = useState<Partial<Order>>({});
   const [pendingId, setPendingId] = useState<number | null>(null);
-
-  const [newProductId, setNewProductId] = useState<number | null>(null);
-  const [newQuantity, setNewQuantity] = useState(1);
 
   const { isMobile } = useResponsive();
   const tableConfig = isMobile
@@ -74,19 +67,7 @@ const OrdersPage = () => {
       {
         title: "Qty",
         render: (_, item) => (
-          <InputNumber
-            min={1}
-            value={item.quantity}
-            onChange={(value) => {
-              if (!value) return;
-
-              updateItem(order.id, item.id, {
-                quantity: Number(value),
-              });
-
-              message.success("Quantity updated");
-            }}
-          />
+          item.quantity > 1 ? <b>{item.quantity}</b> : item.quantity
         ),
       },
       {
@@ -132,22 +113,6 @@ const OrdersPage = () => {
             ? item.cakeConfig?.messageColor ?? "—"
             : null,
       },
-      {
-        title: "",
-        render: (_, item) => (
-          <Popconfirm
-            title="Remove item?"
-            onConfirm={() => {
-              deleteItem(order.id, item.id);
-              message.success("Item removed");
-            }}
-          >
-            <Button danger size="small">
-              Delete
-            </Button>
-          </Popconfirm>
-        ),
-      },
     ];
 
     return (
@@ -159,50 +124,6 @@ const OrdersPage = () => {
           dataSource={order.items}
           pagination={false}
         />
-
-        {/* ADD ITEM */}
-        <Space wrap style={{ marginTop: 8 }}>
-          <Select
-            placeholder="Product"
-            value={newProductId ?? undefined}
-            onChange={(v) => setNewProductId(v)}
-            style={{ width: 180 }}
-          >
-            {products.map((p) => (
-              <Select.Option key={p.id} value={p.id}>
-                {p.name}
-              </Select.Option>
-            ))}
-          </Select>
-
-          <InputNumber
-            min={1}
-            value={newQuantity}
-            onChange={(v) => setNewQuantity(Number(v))}
-          />
-
-          <Button
-            type="dashed"
-            onClick={() => {
-              if (!newProductId) {
-                message.error("Select product");
-                return;
-              }
-
-              addItem(order.id, {
-                productId: newProductId,
-                quantity: newQuantity,
-              });
-
-              message.success("Item added");
-
-              setNewProductId(null);
-              setNewQuantity(1);
-            }}
-          >
-            + Add
-          </Button>
-        </Space>
       </Card>
     );
   };
@@ -293,7 +214,6 @@ const OrdersPage = () => {
         { text: "Confirmed", value: "CONFIRMED" },
         { text: "Paid", value: "PAID" },
         { text: "Fulfilled", value: "FULFILLED" },
-        { text: "Canceled", value: "CANCELED" },
       ],
       //filterMultiple: false,
       onFilter: (value, record) => record.status === value,
@@ -306,7 +226,7 @@ const OrdersPage = () => {
             }
             style={{ width: 140 }}
           >
-            {["PENDING", "CONFIRMED", "PAID", "FULFILLED", "CANCELED"].map(
+            {["PENDING", "CONFIRMED", "PAID", "FULFILLED"].map(
               (s) => (
                 <Select.Option key={s} value={s}>
                   {s}

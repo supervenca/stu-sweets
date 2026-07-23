@@ -2,10 +2,10 @@ import { z } from "zod";
 
 export const cakeConfigSchema = z.object({
   size: z.enum(["SMALL", "MEDIUM", "LARGE"]),
-  flavor: z.string(),
-  color: z.string(),
-  message: z.string().optional(),
-  messageColor: z.string().optional(),
+  flavor: z.string().trim().min(1),
+  color: z.string().trim().min(1),
+  message: z.string().trim().optional(),
+  messageColor: z.string().trim().optional(),
 }).optional();
 
 export const orderItemSchema = z.object({
@@ -47,22 +47,6 @@ export const updateOrderSchema = z.object({
     return digits.length >= 10;
   }, "Phone must have at least 10 digits"),
   comment: z.string().optional(),
-  status: z.enum(["PENDING", "CONFIRMED", "PAID", "FULFILLED", "CANCELED"]).optional(),
+  status: z.enum(["PENDING", "CONFIRMED", "PAID", "FULFILLED",]).optional(),
   total: z.number().optional(),
-}).strict();
-
-// Схема для обновления позиции заказа (например, изменение количества или продукта)
-export const updateOrderItemSchema = z.object({
-  productId: z.number().int().optional(), // можно менять продукт
-  quantity: z.number().int().positive().optional(), // или количество
-  message: z.string().optional(),
-  cakeConfig: cakeConfigSchema,
-}).strict();
-
-// Схема для добавления новой позиции в заказ
-export const addOrderItemSchema = z.object({
-  productId: z.number().int(),
-  quantity: z.number().int().positive(),
-  message: z.string().optional(),
-  cakeConfig: cakeConfigSchema,
 }).strict();

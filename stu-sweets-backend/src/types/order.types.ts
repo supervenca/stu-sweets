@@ -28,6 +28,6 @@ export interface UpdateOrderDto {
   customerEmail?: string;
   customerPhone?: string;
   comment?: string;
-  status?: "PENDING" | "PAID" | "FULFILLED" | "CANCELED" | "CONFIRMED";
+  status?: "PENDING" | "PAID" | "FULFILLED" | "CONFIRMED";
 }
 

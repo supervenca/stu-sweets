@@ -11,6 +11,7 @@ export type Product = {
   category?: {
     id: number;
     name: string;
+    requiresCakeOptions: boolean;
   };
   subCategoryId?: number | null;
   subCategory?: {

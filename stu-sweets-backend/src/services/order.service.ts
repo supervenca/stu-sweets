@@ -100,6 +100,12 @@ function validateOrderItemCakeConfig(product: Product & {
   }
 
   if (item.cakeConfig.flavor) {
+
+    console.log("PRODUCT:", product.name);
+console.log("CAKE CONFIG FROM DB:", product.cakeConfig);
+console.log("ALLOWED FLAVORS:", product.cakeConfig?.flavor);
+console.log("REQUEST FLAVOR:", item.cakeConfig.flavor);
+
   const allowed = product.cakeConfig?.flavor ?? [];
 
   if (!allowed.includes(item.cakeConfig.flavor)) {
@@ -336,128 +342,9 @@ export async function deleteOrder(id: number) {
   }
 }
 
-//Добавить товар в заказ
-export async function addOrderItem(orderId: number, item: OrderItemDto) {
-  const product = await prisma.product.findUnique({ where: { id: item.productId } });
-  if (!product) throw new HttpError(404, "Product not found");
-
-  return prisma.$transaction(async (tx) => {
-    // Проверяем, есть ли уже этот товар в заказе
-    const existingItem = await tx.orderItem.findFirst({
-      where: { orderId, productId: item.productId },
-    });
-
-    let resultItem;
-
-    if (existingItem) {
-      // Увеличиваем количество
-      resultItem = await tx.orderItem.update({
-        where: { id: existingItem.id },
-        data: {
-          quantity: existingItem.quantity + item.quantity,
-          price: product.price, // можно оставить фиксированную цену или пересчитать
-        },
-        include: { product: true },
-      });
-    } else {
-      // Создаём новый
-      resultItem = await tx.orderItem.create({
-        data: {
-          orderId,
-          productId: item.productId,
-          quantity: item.quantity,
-          price: product.price,
-        },
-        include: { product: true },
-      });
-    }
-
-    await recalculateOrderTotal(tx, orderId);
-
-    return resultItem;
-  });
-}
-
-//Обновить товар в заказе
-export async function updateOrderItem(
-  orderId: number,
-  itemId: number,
-  data: Partial<OrderItemDto>
-) {
-  return prisma.$transaction(async (tx) => {
-    const item = await tx.orderItem.findUnique({
-      where: { id: itemId },
-    });
-
-    if (!item || item.orderId !== orderId) {
-      throw new HttpError(404, "Order item not found");
-    }
-
-    const product = await tx.product.findUnique({
-      where: { id: data.productId ?? item.productId },
-      include: { category: true, cakeConfig: true },
-    });
-
-    if (!product) throw new HttpError(404, "Product not found");
-
-    const merged: OrderItemDto = {
-      productId: product.id,
-      quantity: data.quantity ?? item.quantity,
-      cakeConfig: data.cakeConfig ?? undefined,
-    };
-
-    const price = calculateOrderItemPrice(product, merged);
-
-    const updated = await tx.orderItem.update({
-      where: { id: itemId },
-      data: {
-        productId: product.id,
-        quantity: merged.quantity,
-        price,
-        certificate: merged.certificate,
-        cakeConfig: data.cakeConfig
-          ? {
-              upsert: {
-                create: {
-                  size: data.cakeConfig.size ?? null,
-                  flavor: data.cakeConfig.flavor ?? null,
-                  color: data.cakeConfig.color ?? null,
-                  messageColor: data.cakeConfig.messageColor ?? null,
-                },
-                update: {
-                  size: data.cakeConfig.size ?? null,
-                  flavor: data.cakeConfig.flavor ?? null,
-                  color: data.cakeConfig.color ?? null,
-                  messageColor: data.cakeConfig.messageColor ?? null,
-                },
-              },
-            }
-          : undefined,
-      },
-      include: { product: true, cakeConfig: true },
-    });
-
-    await recalculateOrderTotal(tx, orderId);
-
-    return updated;
-  });
-}
-
-//Удалить товар из заказа
-export async function deleteOrderItem(orderId: number, itemId: number) {
-  const item = await prisma.orderItem.findUnique({ where: { id: itemId } });
-  if (!item || item.orderId !== orderId) throw new HttpError(404, "Order item not found");
-
-  return prisma.$transaction(async (tx) => {
-    await tx.orderItem.delete({ where: { id: itemId } });
-    await recalculateOrderTotal(tx, orderId);
-    return { success: true };
-  });
-}
-
 //Пересчет total заказа
-async function recalculateOrderTotal(tx: any, orderId: number) {
-  const items = await tx.orderItem.findMany({ where: { orderId } });
-  const total = items.reduce((sum: number, i: any) => sum + i.price * i.quantity, 0);
-  await tx.order.update({ where: { id: orderId }, data: { total } });
-}
+// async function recalculateOrderTotal(tx: any, orderId: number) {
+//   const items = await tx.orderItem.findMany({ where: { orderId } });
+//   const total = items.reduce((sum: number, i: any) => sum + i.price * i.quantity, 0);
+//   await tx.order.update({ where: { id: orderId }, data: { total } });
+// }
