@@ -1,24 +1,26 @@
 //проверка JWT при handshake
 import jwt from "jsonwebtoken";
 import type { IncomingMessage } from "http";
+import { parse } from "cookie";
 import type { JwtPayload } from "../utils/jwt.js";
 
-function getTokenFromRequest(req: IncomingMessage): string | null {
-  if (!req.url) return null;
+function getTokenFromCookies(req: IncomingMessage): string | null {
+  const rawCookie = req.headers.cookie;
+  if (!rawCookie) return null;
 
-  const queryIndex = req.url.indexOf("?");
-  if (queryIndex === -1) return null;
-
-  const searchParams = new URLSearchParams(req.url.slice(queryIndex));
-  return searchParams.get("token");
+  const cookies = parse(rawCookie);
+  return cookies.token || null;
 }
 
 export function verifyAdminToken(req: IncomingMessage): JwtPayload | null {
   try {
-    const token = getTokenFromRequest(req);
+    const token = getTokenFromCookies(req);
     if (!token) return null;
 
-    const payload = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+    const payload = jwt.verify(
+      token,
+      process.env.JWT_SECRET!
+    ) as JwtPayload;
 
     if (payload.role !== "ADMIN" && payload.role !== "SUPER_ADMIN") {
       return null;

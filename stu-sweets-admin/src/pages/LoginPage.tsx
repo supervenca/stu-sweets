@@ -22,14 +22,11 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const res = await api.post("/auth/login", values);
-
-      localStorage.setItem("token", res.data.token);
+      await api.post("/auth/login", values);
 
       await checkAuth();
 
       message.success("Welcome back 👋");
-
       navigate("/");
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {

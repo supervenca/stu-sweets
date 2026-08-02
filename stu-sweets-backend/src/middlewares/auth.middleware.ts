@@ -8,16 +8,23 @@ export function authMiddleware(
   _res: Response,
   next: NextFunction
 ) {
-  const authHeader = req.headers.authorization;
+  const cookieToken = req.cookies?.token;
 
-  if (!authHeader) {
-    throw new HttpError(401, "Authorization header missing");
+  const authHeader = req.headers.authorization;
+  let bearerToken: string | undefined;
+
+  if (authHeader) {
+    const [type, token] = authHeader.split(" ");
+
+    if (type === "Bearer" && token) {
+      bearerToken = token;
+    }
   }
 
-  const [type, token] = authHeader.split(" ");
+  const token = cookieToken || bearerToken;
 
-  if (type !== "Bearer" || !token) {
-    throw new HttpError(401, "Invalid authorization format");
+  if (!token) {
+    throw new HttpError(401, "Unauthorized");
   }
 
   try {
@@ -27,7 +34,6 @@ export function authMiddleware(
     ) as JwtPayload;
 
     req.user = payload;
-
     next();
   } catch {
     throw new HttpError(401, "Invalid or expired token");

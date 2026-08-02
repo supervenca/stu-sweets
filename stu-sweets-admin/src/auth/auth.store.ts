@@ -11,7 +11,7 @@ type AuthState = {
   user: User | null;
   loading: boolean;
   checkAuth: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -23,13 +23,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       const res = await api.get("/auth/me");
       set({ user: res.data, loading: false });
     } catch {
-      localStorage.removeItem("token");
       set({ user: null, loading: false });
     }
   },
 
-  logout: () => {
-    localStorage.removeItem("token");
-    set({ user: null });
+  logout: async () => {
+    try {
+      await api.post("/auth/logout");
+    } finally {
+      set({ user: null });
+    }
   },
 }));

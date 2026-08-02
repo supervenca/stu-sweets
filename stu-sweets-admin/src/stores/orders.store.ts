@@ -118,23 +118,20 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     if (socket && socket.readyState === WebSocket.OPEN) return;
     manualClose = false;
 
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     const wsBaseUrl = import.meta.env.VITE_WS_URL;
-    socket = new WebSocket(`${wsBaseUrl}/ws/admin?token=${token}`);
+    socket = new WebSocket(`${wsBaseUrl}/ws/admin`);
 
     socket.onmessage = async (event) => {
-  try {
-    const message = JSON.parse(event.data);
+      try {
+        const message = JSON.parse(event.data);
 
-    if (message.event === "order.created") {
-      await get().fetchOrders();
-    }
-  } catch (err) {
-    console.error("Invalid WS message", err);
-  }
-};
+        if (message.event === "order.created") {
+          await get().fetchOrders();
+        }
+      } catch (err) {
+        console.error("Invalid WS message", err);
+      }
+    };
 
     socket.onclose = () => {
       if (manualClose) return;
