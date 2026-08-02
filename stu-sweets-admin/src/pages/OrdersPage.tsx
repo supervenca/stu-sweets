@@ -30,6 +30,8 @@ const OrdersPage = () => {
     fetchOrders,
     updateOrder,
     deleteOrder,
+    connectOrdersSocket,
+    disconnectOrdersSocket,
   } = useOrdersStore();
 
   const {fetchProducts} = useProductsStore();
@@ -50,12 +52,12 @@ const OrdersPage = () => {
     fetchOrders();
     fetchProducts();
 
-    const interval = setInterval(() => {
-      fetchOrders();
-    }, 10000);
+    connectOrdersSocket();
 
-  return () => clearInterval(interval);
-}, [fetchOrders, fetchProducts]);
+  return () => {
+      disconnectOrdersSocket();
+    };
+  }, [fetchOrders, fetchProducts, connectOrdersSocket, disconnectOrdersSocket]);
 
   // ITEMS TABLE
   const renderItemsTable = (order: Order) => {

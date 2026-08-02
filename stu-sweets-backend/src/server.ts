@@ -5,6 +5,7 @@ import { ENV } from "./config/env.js";
 
 import express from "express";
 import cors from "cors";
+import http from "http";
 //import userRoutes from "./routes/user.routes.js";
 import internalUserRoutes from "./routes/user.internal.routes.js";
 import productRoutes from "./routes/product.routes.js";
@@ -26,6 +27,7 @@ import cakeConfigInternalRoutes from "./routes/cakeConfig.internal.routes.js";
 
 import authRoutes from "./routes/auth.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
+import { initWebSocket } from "./ws/wsServer.js";
 
 const app = express();
 
@@ -67,4 +69,8 @@ app.use(
 app.use(errorMiddleware);
 
 const PORT = 4000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+const server = http.createServer(app);
+
+initWebSocket(server);
+
+server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

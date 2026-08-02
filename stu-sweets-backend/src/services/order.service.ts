@@ -1,5 +1,6 @@
 import prisma from "../prisma/client.js";
 import { Product, CakeConfig } from "@prisma/client";
+import { broadcastNewOrder } from "../ws/wsBroadcast.js";
 import { CreateOrderDto, UpdateOrderDto, OrderItemDto } from "../types/order.types.js";
 import { HttpError } from "../utils/httpError.js";
 import { validatePickupDate } from "./pickup.service.js";
@@ -100,11 +101,6 @@ function validateOrderItemCakeConfig(product: Product & {
   }
 
   if (item.cakeConfig.flavor) {
-
-    console.log("PRODUCT:", product.name);
-console.log("CAKE CONFIG FROM DB:", product.cakeConfig);
-console.log("ALLOWED FLAVORS:", product.cakeConfig?.flavor);
-console.log("REQUEST FLAVOR:", item.cakeConfig.flavor);
 
   const allowed = product.cakeConfig?.flavor ?? [];
 
@@ -301,6 +297,9 @@ export async function createOrder(data: CreateOrderDto) {
         },
       },
     });
+
+    //console.log("order created, sending WS event", order.id);
+    broadcastNewOrder(order.id, order.createdAt);
 
     return order;
   });

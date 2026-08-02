@@ -18,12 +18,12 @@ export interface OrderItem {
     };
   };
   cakeConfig?: {
-      size?: "SMALL" | "MEDIUM" | "LARGE";
-      flavor?: string;
-      color?: string;
-      message?: string;
-      messageColor?: string;
-    };
+    size?: "SMALL" | "MEDIUM" | "LARGE";
+    flavor?: string;
+    color?: string;
+    message?: string;
+    messageColor?: string;
+  };
 }
 
 export interface Order {
@@ -50,9 +50,15 @@ type OrdersState = {
   fetchOrders: () => Promise<void>;
   updateOrder: (id: number, data: Partial<Order>) => Promise<void>;
   deleteOrder: (id: number) => Promise<void>;
+  connectOrdersSocket: () => void;
+  disconnectOrdersSocket: () => void;
 };
 
-export const useOrdersStore = create<OrdersState>((set) => ({
+let socket: WebSocket | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let manualClose = false;
+
+export const useOrdersStore = create<OrdersState>((set, get) => ({
   orders: [],
   loading: false,
   error: null,
@@ -87,9 +93,7 @@ export const useOrdersStore = create<OrdersState>((set) => ({
       await api.put(`/internal/orders/${id}`, data);
 
       set((state) => ({
-        orders: state.orders.map((o) =>
-          o.id === id ? { ...o, ...data } : o
-        ),
+        orders: state.orders.map((o) => (o.id === id ? { ...o, ...data } : o)),
       }));
     } catch (err) {
       console.error(err);
@@ -107,6 +111,59 @@ export const useOrdersStore = create<OrdersState>((set) => ({
     } catch (err) {
       console.error(err);
       set({ error: "Failed to delete order" });
+    }
+  },
+
+  connectOrdersSocket: () => {
+    if (socket && socket.readyState === WebSocket.OPEN) return;
+    manualClose = false;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const wsBaseUrl = import.meta.env.VITE_WS_URL;
+    socket = new WebSocket(`${wsBaseUrl}/ws/admin?token=${token}`);
+
+    socket.onmessage = async (event) => {
+  try {
+    const message = JSON.parse(event.data);
+
+    if (message.event === "order.created") {
+      await get().fetchOrders();
+    }
+  } catch (err) {
+    console.error("Invalid WS message", err);
+  }
+};
+
+    socket.onclose = () => {
+      if (manualClose) return;
+
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
+
+      reconnectTimer = setTimeout(() => {
+        get().connectOrdersSocket();
+      }, 3000);
+    };
+
+    socket.onerror = () => {
+      socket?.close();
+    };
+  },
+
+  disconnectOrdersSocket: () => {
+    manualClose = true;
+
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+
+    if (socket) {
+      socket.close();
+      socket = null;
     }
   },
 }));
