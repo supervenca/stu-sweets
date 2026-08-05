@@ -307,20 +307,54 @@ export async function createOrder(data: CreateOrderDto) {
 
 export async function updateOrder(id: number, data: UpdateOrderDto) {
   try {
-    return await prisma.order.update({
-      where: { id },
-      data: {
-        customerName: data.customerName,
-        customerEmail: data.customerEmail,
-        customerPhone: data.customerPhone,
-        comment: data.comment,
-        status: data.status,
-      },
-      include: {
-        items: {
-          include: { product: true, cakeConfig: true },
+    return await prisma.$transaction(async (tx) => {
+      const existing = await tx.order.findUnique({
+        where: { id },
+        select: { clientId: true },
+      });
+
+      if (!existing) {
+        throw new HttpError(404, "Order not found");
+      }
+
+      if (existing.clientId != null) {
+        const clientUpdateData: any = {};
+
+        if (data.customerName !== undefined) {
+          clientUpdateData.customerName = data.customerName;
+        }
+        if (data.customerEmail !== undefined) {
+          clientUpdateData.customerEmail = data.customerEmail;
+        }
+        if (data.customerPhone !== undefined) {
+          clientUpdateData.customerPhone = data.customerPhone;
+        }
+
+        if (Object.keys(clientUpdateData).length > 0) {
+          await tx.client.update({
+            where: { id: existing.clientId },
+            data: clientUpdateData,
+          });
+        }
+      }
+
+      const updated = await tx.order.update({
+        where: { id },
+        data: {
+          customerName: data.customerName,
+          customerEmail: data.customerEmail,
+          customerPhone: data.customerPhone,
+          comment: data.comment,
+          status: data.status,
         },
-      },
+        include: {
+          items: {
+            include: { product: true, cakeConfig: true },
+          },
+        },
+      });
+
+      return updated;
     });
   } catch (e: any) {
     if (e.code === "P2025") {
