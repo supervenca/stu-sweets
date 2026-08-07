@@ -9,10 +9,9 @@ import {
 } from "../services/cakeConfig.service.js";
 
 import {
+  createCakeConfigSchema,
   updateCakeConfigSchema,
 } from "../schemas/cakeConfig.schema.js";
-
-import type { CreateCakeConfigDto } from "../types/cakeConfig.types.js";
 
 export async function getCakeConfigController(req: Request, res: Response) {
   const productId = Number(req.params.productId);
@@ -37,17 +36,9 @@ export async function createCakeConfigController(req: Request, res: Response) {
     throw new HttpError(400, "Invalid product id");
   }
 
-  const data: CreateCakeConfigDto = {
-    productId,
-    flavor: req.body.flavor ?? [],
-    color: req.body.color ?? [],
-    messageColor: req.body.messageColor ?? [],
-    smallMultiplier: req.body.smallMultiplier ?? 1,
-    mediumMultiplier: req.body.mediumMultiplier ?? 1.5,
-    largeMultiplier: req.body.largeMultiplier ?? 2,
-  };
+  const data = createCakeConfigSchema.parse(req.body);
 
-  const config = await createCakeConfig(data);
+  const config = await createCakeConfig({ productId, ...data });
 
   return res.status(201).json(config);
 }
@@ -59,16 +50,9 @@ export async function updateCakeConfigController(req: Request, res: Response) {
     throw new HttpError(400, "Invalid product id");
   }
 
-  const parsed = updateCakeConfigSchema.safeParse(req.body);
+  const data = updateCakeConfigSchema.parse(req.body);
 
-  if (!parsed.success) {
-    throw new HttpError(
-      400,
-      "Invalid input: " + parsed.error.message
-    );
-  }
-
-  const updated = await updateCakeConfig(productId, parsed.data);
+  const updated = await updateCakeConfig(productId, data);
 
   return res.json(updated);
 }

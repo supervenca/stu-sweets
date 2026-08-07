@@ -25,10 +25,9 @@ export async function getOrderByIdPublicController(req: Request, res: Response) 
 }
 
 export async function createOrderController(req: Request, res: Response) {
-  const parseResult = createOrderSchema.safeParse(req.body);
-  if (!parseResult.success) throw new HttpError(400, "Invalid input: " + parseResult.error.message);
+  const data = createOrderSchema.parse(req.body);
 
-  const order = await createOrder(parseResult.data);
+  const order = await createOrder(data);
   return res.status(201).json(order);
 }
 
@@ -36,16 +35,9 @@ export async function updateOrderController(req: Request, res: Response) {
   const id = Number(req.params.id);
   if (Number.isNaN(id)) throw new HttpError(400, "Invalid order id");
 
-  const parseResult = updateOrderSchema.safeParse(req.body);
-  if (!parseResult.success) throw new HttpError(400, "Invalid input: " + parseResult.error.message);
+  const data = updateOrderSchema.parse(req.body);
 
-  const dataToUpdate = { ...parseResult.data };
-  if (dataToUpdate.total !== undefined) {
-    dataToUpdate.total = Number(dataToUpdate.total);
-    if (Number.isNaN(dataToUpdate.total)) throw new HttpError(400, "Total must be a number");
-  }
-
-  const updated = await updateOrder(id, dataToUpdate);
+  const updated = await updateOrder(id, data);
   if (!updated) throw new HttpError(404, "Order not found");
 
   return res.json(updated);

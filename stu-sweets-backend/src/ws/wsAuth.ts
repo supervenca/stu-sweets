@@ -1,14 +1,14 @@
 //проверка JWT при handshake
 import jwt from "jsonwebtoken";
 import type { IncomingMessage } from "http";
-import { parse } from "cookie";
+import { parseCookie } from "cookie";
 import type { JwtPayload } from "../utils/jwt.js";
 
 function getTokenFromCookies(req: IncomingMessage): string | null {
   const rawCookie = req.headers.cookie;
   if (!rawCookie) return null;
 
-  const cookies = parse(rawCookie);
+  const cookies = parseCookie(rawCookie);
   return cookies.token || null;
 }
 

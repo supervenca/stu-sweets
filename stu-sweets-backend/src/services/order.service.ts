@@ -90,7 +90,7 @@ function validateOrderItemCakeConfig(product: Product & {
     );
   }
 
-  const { size, flavor, color, message, messageColor } = item.cakeConfig;
+  const { size, flavor, color } = item.cakeConfig;
 
   if (!size) {
     throw new HttpError(400, "Cake size is required");
@@ -127,18 +127,26 @@ function validateOrderItemCakeConfig(product: Product & {
   }
 }
 
-  // если есть текст, то цвет текста обязателен
-  if (item.cakeConfig.message && !item.cakeConfig.messageColor) {
-    throw new HttpError(
-      400,
-      "Message color is required when message is provided"
-    );
+  // если нет текста, то цвет текста не нужен
+  if (!item.cakeConfig.message || !item.cakeConfig.message.trim()) {
+    item.cakeConfig.messageColor = undefined;
+  } else {
+    // если есть текст, то цвет текста обязателен и должен быть из списка разрешённых
+    if (!item.cakeConfig.messageColor) {
+      throw new HttpError(
+        400,
+        "Message color is required when message is provided"
+      );
+    }
+
+    const allowedMessageColors = product.cakeConfig?.messageColor ?? [];
+    if (!allowedMessageColors.includes(item.cakeConfig.messageColor)) {
+      throw new HttpError(
+        400,
+        `Invalid message color: ${item.cakeConfig.messageColor}`
+      );
+    }
   }
-  // если нет текста, то цвет не нужен
-  if (!item.cakeConfig?.message || !item.cakeConfig.message.trim()) {
-  item.cakeConfig.messageColor = undefined;
-}
-  
 }
 }
 

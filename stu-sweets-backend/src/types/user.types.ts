@@ -8,6 +8,6 @@ export interface CreateUserDto {
 export interface UpdateUserDto {
   email?: string;
   name?: string;
-  password: string;
-  role: "ADMIN" | "SUPER_ADMIN";
+  password?: string;
+  role?: "ADMIN" | "SUPER_ADMIN";
 }

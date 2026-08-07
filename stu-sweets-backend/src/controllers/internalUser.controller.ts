@@ -8,6 +8,7 @@ import {
 } from "../services/user.service.js";
 import { HttpError } from "../utils/httpError.js";
 import prisma from "../prisma/client.js";
+import { createUserSchema, updateUserSchema } from "../schemas/user.schema.js";
 
 // Убираем пароль из ответа
 function sanitizeUser(user: any) {
@@ -34,18 +35,9 @@ export async function getUserByIdController(req: Request, res: Response) {
 
 // CREATE USER with role
 export async function createUserController(req: Request, res: Response) {
-  const { email, password, name, role } = req.body;
+  const data = createUserSchema.parse(req.body);
 
-  if (!email || !password || !role) {
-    throw new HttpError(400, "Email, password and role are required");
-  }
-
-  const user = await createUser({
-    email,
-    password,
-    name,
-    role,
-  });
+  const user = await createUser(data);
 
   res.status(201).json(sanitizeUser(user));
 }
@@ -53,7 +45,8 @@ export async function createUserController(req: Request, res: Response) {
 // UPDATE USER
 export async function updateUserController(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const { email, password, role } = req.body;
+  const data = updateUserSchema.parse(req.body);
+  const { role } = data;
 
   // cannot change your own role
   if (
@@ -63,12 +56,6 @@ export async function updateUserController(req: Request, res: Response) {
   ) {
     throw new HttpError(400, "You cannot change your own role");
   }
-
-  const data: any = {};
-
-  if (email) data.email = email;
-  if (role) data.role = role;
-  if (password) data.password = password; // ❗ хеш будет в service
 
   const updated = await updateUser(id, data);
 

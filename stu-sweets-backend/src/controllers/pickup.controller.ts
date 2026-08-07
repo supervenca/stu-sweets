@@ -49,11 +49,7 @@ export async function getPickupSlotByDateController(req: Request, res: Response)
 export async function upsertPickupSlotController(req: Request, res: Response) {
   const date = parseDate(req.params.date);
 
-  const parseResult = upsertPickupSlotSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    throw new HttpError(400, "Invalid input: " + parseResult.error.message);
-  }
-  const data = parseResult.data;
+  const data = upsertPickupSlotSchema.parse(req.body);
 
   if (Object.keys(data).length === 0) {
     throw new HttpError(400, "Request body cannot be empty");
@@ -80,12 +76,8 @@ export async function getSettingsController(req: Request, res: Response) {
 }
 
 export async function updateSettingsController(req: Request, res: Response) {
+  const data = updateBakerySettingsSchema.parse(req.body);
 
-const parseResult = updateBakerySettingsSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    throw new HttpError(400, "Invalid input: " + parseResult.error.message);
-  }
-  
-  const updated = await updateBakerySettings(req.body);
+  const updated = await updateBakerySettings(data);
   res.json(updated);
 }

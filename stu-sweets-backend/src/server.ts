@@ -70,7 +70,7 @@ app.use(
 
 app.use(errorMiddleware);
 
-const PORT = 4000;
+const PORT = ENV.PORT;
 const server = http.createServer(app);
 
 initWebSocket(server);

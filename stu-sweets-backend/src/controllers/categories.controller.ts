@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../prisma/client.js";
+import { HttpError } from "../utils/httpError.js";
 import {
   createCategorySchema,
   updateCategorySchema,
@@ -15,15 +16,8 @@ export const getCategories = async (_req: Request, res: Response) => {
 
 export const createCategory = async (req: Request, res: Response) => {
 
-  const parseResult = createCategorySchema.safeParse(req.body);
-
-  if (!parseResult.success) {
-    return res.status(400).json({
-      message: parseResult.error.message,
-    });
-  }
-
-  const { name, requiresPickupSlot = false, requiresCakeOptions = false } = parseResult.data;
+  const { name, requiresPickupSlot = false, requiresCakeOptions = false } =
+    createCategorySchema.parse(req.body);
 
   try {
     const category = await prisma.category.create({
@@ -33,35 +27,22 @@ export const createCategory = async (req: Request, res: Response) => {
     res.status(201).json(category);
   } catch (err: any) {
     if (err.code === "P2002") {
-      return res.status(409).json({ message: "Category already exists" });
+      throw new HttpError(409, "Category already exists");
     }
 
-    res.status(500).json({ message: "Failed to create category" });
+    throw err;
   }
 };
 
 export const updateCategory = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
 
-  const parseResult = updateCategorySchema.safeParse(
-    req.body
-  );
-
-  if (!parseResult.success) {
-    return res.status(400).json({
-      message: parseResult.error.message,
-    });
-  }
-
-  const data = parseResult.data;
+  const data = updateCategorySchema.parse(req.body);
 
   // защита от пустого PATCH
   if (Object.keys(data).length === 0) {
-    return res.status(400).json({
-      message: "Request body cannot be empty",
-    });
+    throw new HttpError(400, "Request body cannot be empty");
   }
-
 
   try {
     const category = await prisma.category.update({
@@ -70,8 +51,12 @@ export const updateCategory = async (req: Request, res: Response) => {
     });
 
     res.json(category);
-  } catch {
-    res.status(404).json({ message: "Category not found" });
+  } catch (err: any) {
+    if (err.code === "P2025") {
+      throw new HttpError(404, "Category not found");
+    }
+
+    throw err;
   }
 };
 
@@ -84,7 +69,11 @@ export const deleteCategory = async (req: Request, res: Response) => {
     });
 
     res.status(204).send();
-  } catch {
-    res.status(404).json({ message: "Category not found" });
+  } catch (err: any) {
+    if (err.code === "P2025") {
+      throw new HttpError(404, "Category not found");
+    }
+
+    throw err;
   }
 };

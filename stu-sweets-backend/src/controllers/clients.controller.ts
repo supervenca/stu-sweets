@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as clientsService from "../services/clients.service.js";
+import { toggleBlacklistSchema } from "../schemas/clients.schema.js";
 
 export async function getClients(req: Request, res: Response) {
   const clients = await clientsService.getClients();
@@ -8,7 +9,7 @@ export async function getClients(req: Request, res: Response) {
 
 export async function toggleBlacklist(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const { blacklist } = req.body;
+  const { blacklist } = toggleBlacklistSchema.parse(req.body);
 
   const updated = await clientsService.toggleBlacklist(id, blacklist);
 

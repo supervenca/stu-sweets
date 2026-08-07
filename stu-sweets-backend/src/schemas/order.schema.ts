@@ -48,5 +48,4 @@ export const updateOrderSchema = z.object({
   }, "Phone must have at least 10 digits"),
   comment: z.string().optional(),
   status: z.enum(["PENDING", "CONFIRMED", "PAID", "FULFILLED",]).optional(),
-  total: z.number().optional(),
 }).strict();

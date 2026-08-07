@@ -49,16 +49,9 @@ export async function createProductController(
   req: Request,
   res: Response
 ) {
-  const parseResult = createProductSchema.safeParse(req.body);
+  const data = createProductSchema.parse(req.body);
 
-  if (!parseResult.success) {
-    throw new HttpError(
-      400,
-      "Invalid input: " + parseResult.error.message
-    );
-  }
-
-  const product = await createProduct(parseResult.data);
+  const product = await createProduct(data);
 
   return res.status(201).json(product);
 }
@@ -69,16 +62,9 @@ export async function updateProductController(
 ) {
   const id = parseId(req.params.id, "product id");
 
-  const parseResult = updateProductSchema.safeParse(req.body);
+  const data = updateProductSchema.parse(req.body);
 
-  if (!parseResult.success) {
-    throw new HttpError(
-      400,
-      "Invalid input: " + parseResult.error.message
-    );
-  }
-
-  const updated = await updateProduct(id, parseResult.data);
+  const updated = await updateProduct(id, data);
 
   if (!updated) {
     throw new HttpError(404, "Product not found");

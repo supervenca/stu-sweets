@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import { FileType } from "../types/file.types.js";
 
 const folders = {
@@ -12,7 +13,8 @@ export const diskStorage: FileStorage = {
   async save(file, type) {
     const folder = folders[type];
 
-    const filename = `${Date.now()}-${file.originalname}`;
+    const ext = path.extname(file.originalname).replace(/[^.\w]/g, "");
+    const filename = `${Date.now()}-${crypto.randomUUID()}${ext}`;
     const fullPath = path.join(folder, filename);
 
     fs.mkdirSync(folder, { recursive: true });

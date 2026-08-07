@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { login } from "../services/auth.service.js";
 import { HttpError } from "../utils/httpError.js";
 import prisma from "../prisma/client.js";
+import { loginSchema } from "../schemas/auth.schema.js";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -14,11 +15,7 @@ const authCookieOptions = {
 };
 
 export async function loginController(req: Request, res: Response) {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    throw new HttpError(400, "Email and password are required");
-  }
+  const { email, password } = loginSchema.parse(req.body);
 
   const result = await login(email, password);
 

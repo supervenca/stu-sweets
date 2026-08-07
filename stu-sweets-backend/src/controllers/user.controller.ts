@@ -36,15 +36,9 @@ export async function getUserByIdController(req: Request, res: Response) {
 
 // Создать пользователя
 export async function createUserController(req: Request, res: Response) {
-  const parseResult = createUserSchema.safeParse(req.body);
+  const data = createUserSchema.parse(req.body);
 
-  if (!parseResult.success) {
-    // Если данные невалидные — выбрасываем ошибку
-    throw new HttpError(400, "Invalid input: " + parseResult.error.message);
-  }
-
-  const { email, password, name } = parseResult.data;
-  const user = await createUser({ email, password, name });
+  const user = await createUser(data);
 
   res.status(201).json(sanitizeUser(user));
 }
@@ -53,12 +47,9 @@ export async function createUserController(req: Request, res: Response) {
 // Обновить пользователя
 export async function updateUserController(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const parseResult = updateUserSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    throw new HttpError(400, "Invalid input: " + parseResult.error.message);
-  }
+  const data = updateUserSchema.parse(req.body);
 
-  const updated = await updateUser(id, parseResult.data);
+  const updated = await updateUser(id, data);
   if (!updated) throw new HttpError(404, "User not found");
   return res.json(sanitizeUser(updated));
 }
